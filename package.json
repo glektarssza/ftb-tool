@@ -25,10 +25,11 @@
         "test": "./tests/"
     },
     "scripts": {
-        "prepublishOnly": "npm run rebuild",
+        "dev": "tsx ./src/cli.ts",
         "lint": "eslint --ext .ts ./src/",
         "lint:fix": "npm run lint -- --fix",
         "test": "echo 'No tests (yet)!' && exit 1",
+        "prepublishOnly": "npm run rebuild",
         "build": "npm run build:all",
         "build:all": "npm run build:lib && npm run build:types",
         "build:lib": "tsc --project ./src/tsconfig.json",
