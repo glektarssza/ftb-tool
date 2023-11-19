@@ -24,7 +24,24 @@
         "man": "./docs/man/",
         "test": "./tests/"
     },
-    "scripts": {},
+    "scripts": {
+        "prepublishOnly": "npm run rebuild",
+        "lint": "eslint --ext .ts ./src/",
+        "lint:fix": "npm run lint -- --fix",
+        "test": "echo 'No tests (yet)!' && exit 1",
+        "build": "npm run build:all",
+        "build:all": "npm run build:lib && npm run build:types",
+        "build:lib": "tsc --project ./src/tsconfig.json",
+        "build:types": "npm run build:lib -- --declaration --emitDeclarationOnly --declarationDir ./types/",
+        "clean": "npm run clean:all",
+        "clean:all": "npm run clean:lib && npm run clean:types",
+        "clean:lib": "rimraf ./lib/",
+        "clean:types": "rimraf ./types/",
+        "rebuild": "npm run clean && npm run build",
+        "rebuild:all": "npm run clean:all && npm run build:all",
+        "rebuild:lib": "npm run clean:lib && npm run build:lib",
+        "rebuild:types": "npm run clean:types && npm run build:types"
+    },
     "devDependencies": {
         "@types/node": "^20.9.2",
         "@types/node-fetch": "^2.6.9",
@@ -35,6 +52,7 @@
         "eslint-config-prettier": "^9.0.0",
         "eslint-plugin-prettier": "^5.0.1",
         "eslint-plugin-tsdoc": "^0.2.17",
+        "rimraf": "^5.0.5",
         "tsx": "^4.1.3",
         "typescript": "^5.2.2"
     },
