@@ -37,3 +37,8 @@ tags
 # Packages ##
 ## NodeJS ##
 node_modules/
+
+# Artifacts #
+## Transpiled Source ##
+lib/
+types/
