@@ -1,0 +1,10 @@
+# Sources #
+src/
+
+# Development Configs #
+.eslintrc.js
+.prettierrc.js
+tsconfig.json
+
+# Git #
+.gitignore
