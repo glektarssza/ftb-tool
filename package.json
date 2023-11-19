@@ -1,0 +1,30 @@
+{
+    "name": "ftb-tool",
+    "description": "A simple CLI tool for searching for and downloading Feed the Beast modpacks.",
+    "version": "0.0.0",
+    "license": "MIT",
+    "private": true,
+    "author": {
+        "name": "G'lek Tarssza",
+        "email": "glek@glektarssza.com",
+        "url": "https://glektarssza.com"
+    },
+    "homepage": "https://github.com/glektarssza/ftb-tool",
+    "bugs": {
+        "url": "https://github.com/glektarssza/ftb-tool/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/glektarssza/ftb-tool"
+    },
+    "directories": {
+        "bin": "./bin/",
+        "doc": "./docs/",
+        "lib": "./lib/",
+        "man": "./docs/man/",
+        "test": "./tests/"
+    },
+    "scripts": {},
+    "dependencies": {},
+    "devDependencies": {}
+}
