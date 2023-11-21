@@ -1,4 +1,4 @@
-import {PassThrough} from 'node:stream';
+import {Writable} from 'node:stream';
 import {CommandModule} from 'yargs';
 import {GlobalCLIOptions} from '../types';
 import {setVerbose, Logger} from '../helpers/logging';
@@ -112,12 +112,9 @@ export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
         const data = await getFTB(
             `/modpack/search/${args.limit}?term=${escape(args.term)}`
         );
-        const os = new PassThrough();
-        if (args.output === '-') {
-            os.pipe(process.stdout);
-        } else {
-            const ofs = await createWritableStream(args.output);
-            os.pipe(ofs);
+        let os: Writable = process.stdout;
+        if (args.output !== '-') {
+            os = await createWritableStream(args.output);
         }
         if (args.json) {
             let outputData: string;
