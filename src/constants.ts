@@ -16,7 +16,7 @@ export const DEFAULT_USER_AGENT = `${APP_NAME}/${APP_VERSION} NodeJS/${process.v
 /**
  * The default base URL of the Feed the Beast API.
  */
-export const DEFAULT_FTB_API_BASE_URL = 'https://api.modpacks.ch';
+export const DEFAULT_FTB_API_BASE_URL = 'https://api.modpacks.ch/public';
 
 /**
  * The default base URL of the CurseForge API.
