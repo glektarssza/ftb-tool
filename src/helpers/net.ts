@@ -64,6 +64,12 @@ const DEFAULT_OPTIONS: AxiosRequestConfig = {
     responseEncoding: 'UTF-8',
     validateStatus(status: number) {
         return status >= 200 && status < 300;
+    },
+    transformResponse(resp) {
+        if (typeof resp === 'string') {
+            return JSON.parse(resp) as unknown;
+        }
+        return resp as unknown;
     }
 };
 
