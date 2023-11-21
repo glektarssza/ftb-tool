@@ -84,8 +84,7 @@ export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
             .option('pretty', {
                 type: 'boolean',
                 description: 'Whether pretty format the JSON output.',
-                default: false,
-                implies: 'json'
+                default: false
             })
             .option('output', {
                 type: 'string',
@@ -116,6 +115,7 @@ export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
         if (args.output !== '-') {
             os = await createWritableStream(args.output);
         }
+        os.setDefaultEncoding('utf-8');
         if (args.json) {
             let outputData: string;
             if (args.pretty) {
