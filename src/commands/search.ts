@@ -110,7 +110,7 @@ export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
         }
         logger.info(`Searching for modpacks by term "${args.term}"`);
         const data = await getFTB(
-            `/modpacks/search/${args.limit}?term=${escape(args.term)}`
+            `/modpack/search/${args.limit}?term=${escape(args.term)}`
         );
         const os = new PassThrough();
         if (args.output === '-') {
