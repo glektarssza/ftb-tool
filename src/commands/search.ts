@@ -3,7 +3,13 @@ import {CommandModule} from 'yargs';
 import {GlobalCLIOptions} from '../types';
 import {setVerbose, Logger} from '../helpers/logging';
 import {createWritableStream} from '../helpers/fs';
-import {getFTB} from '../helpers/net';
+import {
+    getFTB,
+    setRequestTimeout,
+    setFlameAPIKey,
+    setRequestLimit,
+    setUserAgent
+} from '../helpers/net';
 import {escape} from 'node:querystring';
 
 const logger = new Logger('search');
@@ -93,6 +99,14 @@ export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
         setVerbose(args.verbose);
         if (args.verbose) {
             logger.verbose('Verbose logging enabled');
+        }
+        setRequestTimeout(args.timeout);
+        setRequestLimit(args.maxConnections);
+        if (args.curseForgeAPIKey) {
+            setFlameAPIKey(args.curseForgeAPIKey);
+        }
+        if (args.userAgent) {
+            setUserAgent(args.userAgent);
         }
         logger.info(`Searching for modpacks by term "${args.term}"`);
         const data = await getFTB(

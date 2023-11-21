@@ -3,7 +3,7 @@ import yargs from 'yargs';
 import {hideBin} from 'yargs/helpers';
 import {APP_NAME, APP_VERSION} from './constants';
 import commands from './commands';
-import {Logger} from './lib/logging';
+import {Logger} from './helpers/logging';
 
 const logger = new Logger('app');
 
@@ -24,6 +24,23 @@ yargs(hideBin(process.argv))
         alias: 'mc',
         default: 3,
         description: 'The maximum number of parallel connections to use.'
+    })
+    .option('timeout', {
+        type: 'number',
+        alias: 't',
+        default: 10,
+        description: 'The timeout for network requests, in seconds.',
+        coerce(value: number) {
+            return value * 1000;
+        }
+    })
+    .option('curseForgeAPIKey', {
+        type: 'string',
+        description: 'The API key to use when connecting to the CurseForge API.'
+    })
+    .option('userAgent', {
+        type: 'string',
+        description: 'A custom user agent to use when making network requests.'
     })
     .recommendCommands()
     .demandCommand()

@@ -24,9 +24,9 @@ export const DEFAULT_FTB_API_BASE_URL = 'https://api.modpacks.ch';
 export const DEFAULT_FLAME_API_BASE_URL = 'https://api.curseforge.com/v1';
 
 /**
- * The default timeout on network requests, in seconds.
+ * The default timeout on network requests, in milliseconds.
  */
-export const DEFAULT_NET_TIMEOUT = 10;
+export const DEFAULT_NET_TIMEOUT = 10000;
 
 /**
  * The default maximum number of parallel network requests that can be made.

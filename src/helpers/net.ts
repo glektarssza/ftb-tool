@@ -62,7 +62,6 @@ const logger = new Logger('net');
 const DEFAULT_OPTIONS: AxiosRequestConfig = {
     responseType: 'json',
     responseEncoding: 'UTF-8',
-    timeout: DEFAULT_NET_TIMEOUT,
     validateStatus(status: number) {
         return status >= 200 && status < 300;
     }
@@ -108,6 +107,11 @@ let flameAPIKey: AxiosHeaderValue = null;
 let requestLimit = DEFAULT_NET_REQUEST_LIMIT;
 
 /**
+ * The timeout of network requests, in milliseconds.
+ */
+let requestTimeout = DEFAULT_NET_TIMEOUT;
+
+/**
  * Make a request to the given endpoint.
  *
  * @typeparam T - The shape of the data expected in the response.
@@ -143,6 +147,7 @@ async function makeRequest<T, D = unknown>(
 function buildBaseRequestConfig(path: string): AxiosRequestConfig {
     return {
         ...DEFAULT_OPTIONS,
+        timeout: requestTimeout,
         url: path,
         headers: {
             'User-Agent': userAgent
@@ -179,6 +184,31 @@ function buildFlameRequestConfig(path: string): AxiosRequestConfig {
             'X-API-Key': flameAPIKey
         }
     };
+}
+
+/**
+ * Get the timeout of network requests, in milliseconds.
+ *
+ * @returns The timeout of network requests, in milliseconds.
+ */
+export function getRequestTimeout(): number {
+    return requestTimeout;
+}
+
+/**
+ * Set the timeout of network requests, in milliseconds.
+ *
+ * @param value - The new timeout of network requests, in milliseconds.
+ */
+export function setRequestTimeout(value: number) {
+    requestTimeout = value;
+}
+
+/**
+ * Reset the timeout of network requests, in milliseconds.
+ */
+export function resetRequestTimeout() {
+    requestTimeout = DEFAULT_NET_TIMEOUT;
 }
 
 /**
