@@ -123,11 +123,14 @@ export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
             } else {
                 outputData = JSON.stringify(data);
             }
-            os.write(outputData);
+            const lines = outputData.split('\n');
+            lines.forEach((line) => {
+                os.write(line);
+                os.write('\n');
+            });
         } else {
-            os.write(`Pack ID - Pack Name\n`);
-            os.write(`-------------------\n`);
+            os.write('Pack ID - Pack Name\n');
+            os.write('-------------------\n');
         }
-        os.write('\n');
     }
 };
