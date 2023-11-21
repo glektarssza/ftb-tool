@@ -1,9 +1,9 @@
 import {Writable} from 'node:stream';
 import {CommandModule} from 'yargs';
 import {GlobalCLIOptions} from '../types';
-import {setVerbose, Logger} from '../lib/logging';
-import {createWritableStream} from '../lib/fs';
-import {getFTB} from '../lib';
+import {setVerbose, Logger} from '../helpers/logging';
+import {createWritableStream} from '../helpers/fs';
+import {getFTB} from '../helpers/net';
 import {escape} from 'node:querystring';
 
 const logger = new Logger('search');
@@ -48,12 +48,12 @@ export interface SearchCLIOptions extends GlobalCLIOptions {
     output: string;
 }
 
-interface SearchResponseData {
-    packs: number[];
-    curseforge: number[];
-    limit: number;
-    results: number;
-}
+// interface SearchResponseData {
+//     packs: number[];
+//     curseforge: number[];
+//     limit: number;
+//     results: number;
+// }
 
 export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
     command: 'search <term>',
