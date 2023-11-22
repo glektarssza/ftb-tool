@@ -107,7 +107,7 @@ jobs:
     if: ${{github.event_name == 'release' && github.event.action == 'created'}}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     needs:
       - build
     steps:
