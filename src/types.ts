@@ -31,3 +31,18 @@ export interface GlobalCLIOptions {
      */
     userAgent?: string | undefined;
 }
+
+/**
+ * Data about a modpack.
+ */
+export interface ModpackManifest {
+    /**
+     * The ID of the modpack.
+     */
+    id: number;
+
+    /**
+     * The name of the modpack.
+     */
+    name: string;
+}
