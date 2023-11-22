@@ -4,13 +4,13 @@ const path = require('node:path');
 /**
  * Get all items in a directory recursively.
  *
- * @param {string} path The path to the directory to scan.
+ * @param {string} directory The path to the directory to scan.
  *
  * @returns {Promise<fs.Dirent[]>} A promise that resolves to an array of
  * `fs.Dirent` objects.
  */
-async function getItemsRecursive(path) {
-    const items = await fs.readdir(path, {
+async function getItemsRecursive(directory) {
+    const items = await fs.readdir(directory, {
         withFileTypes: true,
         encoding: 'utf-8'
     });
