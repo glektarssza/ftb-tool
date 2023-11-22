@@ -1,6 +1,6 @@
 import {Writable} from 'node:stream';
 import {CommandModule} from 'yargs';
-import {GlobalCLIOptions} from '../types';
+import {GlobalCLIOptions, ModpackManifest} from '../types';
 import {setVerbose, Logger} from '../helpers/logging';
 import {createWritableStream} from '../helpers/fs';
 import {
@@ -54,13 +54,40 @@ export interface SearchCLIOptions extends GlobalCLIOptions {
     output: string;
 }
 
-// interface SearchResponseData {
-//     packs: number[];
-//     curseforge: number[];
-//     limit: number;
-//     results: number;
-// }
+/**
+ * The shape of the data that comes back from the `search` Feed the Beast
+ * endpoint.
+ */
+interface SearchResponseData {
+    /**
+     * The IDs of the Feed the Beast packs that matched the search.
+     */
+    packs: number[];
 
+    /**
+     * The IDs of the CurseForge packs that matched the search.
+     */
+    curseforge: number[];
+
+    /**
+     * The total number of results returned across all modpack sources.
+     */
+    total: number;
+
+    /**
+     * The maximum number of results returned per modpack source.
+     */
+    limit: number;
+
+    /**
+     * The timestamp at which this data was last refreshed.
+     */
+    refreshed: number;
+}
+
+/**
+ * The `search` command.
+ */
 export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
     command: 'search <term>',
     describe: 'Search the Feed the Beast API for the given term.',
@@ -108,8 +135,13 @@ export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
             setUserAgent(args.userAgent);
         }
         logger.info(`Searching for modpacks by term "${args.term}"`);
-        const data = await getFTB(
+        const {packs} = await getFTB<SearchResponseData>(
             `/modpack/search/${args.limit}?term=${escape(args.term)}`
+        );
+        const data = await Promise.all(
+            packs.map(async (id) => {
+                return await getFTB<ModpackManifest>(`/modpack/${id}`);
+            })
         );
         let os: Writable = process.stdout;
         if (args.output !== '-') {
@@ -127,6 +159,9 @@ export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
         } else {
             os.write('Pack ID - Pack Name\n');
             os.write('-------------------\n');
+            data.forEach(({id, name}) => {
+                os.write(`${id} - ${name}\n`);
+            });
         }
     }
 };
