@@ -130,7 +130,7 @@ export const command: CommandModule<GlobalCLIOptions, InfoCLIOptions> = {
             os.write(`Available Versions\n`);
             os.write(`-------------------------\n`);
             data.versions.forEach((version) => {
-                os.write(`${version.id} - ${version.name}\n`);
+                os.write(`* ${version.name} (ID: ${version.id})\n`);
             });
         }
     }
