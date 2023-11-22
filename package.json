@@ -38,7 +38,7 @@
         "prebuild:standalone:base": "npm run rebuild:lib",
         "build:standalone": "npm run build:standalone:base -- --targets latest",
         "build:standalone:base": "pkg --config ./pkg-options.json --out-path dist ./lib/cli.js",
-        "build:standalone:all": "npm run build:standalone -- --targets latest-macos,latest-linux,latest-win",
+        "build:standalone:all": "npm run build:standalone:base -- --targets latest-macos,latest-linux,latest-win",
         "build:lib": "tsc --project ./src/tsconfig.json",
         "build:types": "npm run build:lib -- --declaration --emitDeclarationOnly --declarationDir ./types/",
         "clean": "npm run clean:all",
