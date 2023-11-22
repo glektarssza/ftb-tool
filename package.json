@@ -25,6 +25,7 @@
         "test": "./tests/"
     },
     "scripts": {
+        "prepare": "husky install",
         "dev": "tsx ./src/cli.ts",
         "lint": "eslint --ext .ts ./src/",
         "lint:fix": "npm run lint -- --fix",
