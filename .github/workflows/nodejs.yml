@@ -94,7 +94,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ftb-tool-${{(startsWith(matrix.os, 'windows') && 'windows') || (startsWith(matrix.os, 'macos') && 'macos') || (startsWith(matrix.os, 'ubuntu') && 'linux') || 'unknown'}}
-          path: ./dist/cli
+          path: ./dist/cli${{startsWith(matrix.os, 'windows') && '.exe'}}
           if-no-files-found: 'error'
   publish-release-artifacts:
     name: Publish release artifacts
