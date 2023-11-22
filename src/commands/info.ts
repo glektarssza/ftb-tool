@@ -126,9 +126,6 @@ export const command: CommandModule<GlobalCLIOptions, InfoCLIOptions> = {
             os.write(
                 `Released: ${new Date(data.released * 1000).toLocaleString()}\n`
             );
-            os.write(
-                `Updated: ${new Date(data.updated * 1000).toLocaleString()}\n`
-            );
             os.write('\n');
             os.write(`Available Versions\n`);
             os.write(`-------------------------\n`);
