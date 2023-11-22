@@ -45,4 +45,14 @@ export interface ModpackManifest {
      * The name of the modpack.
      */
     name: string;
+
+    /**
+     * A short description of the modpack.
+     */
+    synopsis: string;
+
+    /**
+     * A description of the modpack.
+     */
+    description: string;
 }
