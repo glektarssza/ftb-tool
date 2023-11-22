@@ -92,12 +92,15 @@ jobs:
       - id: npm-build-standalone
         name: Run "npm run build:standalone"
         run: npm run build:standalone
+      - id: rename-standalone-binary
+        name: Rename standalone binary
+        run: mv ./dist/cli${{(startsWith(matrix.os, 'windows') && '.exe') || ''}} ./dist/ftb-tool${{(startsWith(matrix.os, 'windows') && '.exe') || ''}}
       - id: upload-standalone-binary
         name: Upload standalone binary
         uses: actions/upload-artifact@v3
         with:
           name: ftb-tool-${{(startsWith(matrix.os, 'windows') && 'windows') || (startsWith(matrix.os, 'macos') && 'macos') || (startsWith(matrix.os, 'ubuntu') && 'linux') || 'unknown'}}
-          path: ./dist/cli${{(startsWith(matrix.os, 'windows') && '.exe') || ''}}
+          path: ./dist/ftb-tool${{(startsWith(matrix.os, 'windows') && '.exe') || ''}}
           if-no-files-found: 'error'
   publish-release-artifacts:
     name: Publish release artifacts
@@ -131,4 +134,4 @@ jobs:
         with:
           script: |
             const script = require('./.github/scripts/upload-release-assets.js');
-            await script({github, context, core});
+            await script({github, context, core}, ${{toJson(steps.download-artifacts.outputs.download-path)}});
