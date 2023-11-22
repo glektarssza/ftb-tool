@@ -31,7 +31,7 @@
         "lint:cache": "npm run lint -- --cache",
         "lint:fix": "npm run lint -- --fix",
         "lint:cache:fix": "npm run lint:cache -- --fix",
-        "test": "echo 'No tests (yet)!' && exit 1",
+        "test": "echo 'No tests (yet)!' && exit 0",
         "prepublishOnly": "npm run rebuild",
         "build": "npm run build:all",
         "build:all": "npm run build:lib && npm run build:types",
