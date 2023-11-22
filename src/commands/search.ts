@@ -15,7 +15,7 @@ import {
 /**
  * The logger for this module.
  */
-const logger = new Logger('search');
+const logger = new Logger('command:search');
 
 /**
  * The command-line options for the `search` command.
