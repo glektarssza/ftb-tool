@@ -43,14 +43,18 @@ module.exports = async ({ github, context, core }, artifactDirectory) => {
     core.info(`Uploading ${assets.length} assets to release ${context.payload.release.id}...`);
     for (const artifact of assets) {
         const artifactPath = path.join(artifact.path, artifact.name);
+        let artifactName = path.basename(artifact.path);
+        if (path.extname(artifact.name) === '.exe') {
+            artifactName += '.exe';
+        }
         core.info(`Reading ${artifact.name} from ${artifactPath}...`);
         const data = await fs.readFile(artifactPath);
-        core.info(`Uploading ${artifact.name} to release...`);
+        core.info(`Uploading to release as ${artifactName}...`);
         await github.rest.repos.uploadReleaseAsset({
             owner,
             repo,
             release_id: context.payload.release.id,
-            name: artifact.name,
+            name: artifactName,
             data
         });
     }
