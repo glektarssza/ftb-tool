@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import yargs from 'yargs';
+import yargs, {CommandModule} from 'yargs';
 import {hideBin} from 'yargs/helpers';
 import {APP_NAME, APP_VERSION} from './constants';
 import commands from './commands';
@@ -44,7 +44,7 @@ yargs(hideBin(process.argv))
     })
     .recommendCommands()
     .demandCommand()
-    .command(commands)
+    .command(commands as CommandModule[])
     .parseAsync()
     .then(() => {
         logger.info(chalk.greenBright('Success'));
