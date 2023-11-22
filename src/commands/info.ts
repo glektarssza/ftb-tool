@@ -109,8 +109,28 @@ export const command: CommandModule<GlobalCLIOptions, InfoCLIOptions> = {
             }
             os.write(`${outputData}\n`);
         } else {
-            os.write(`${data.id} - ${data.name}\n`);
-            os.write(`${data.description}\n`);
+            os.write(`${data.name}\n`);
+            os.write(`-------------------------\n`);
+            os.write('\n');
+            os.write(`${data.synopsis}\n`);
+            os.write('\n');
+            os.write(`ID: ${data.id}\n`);
+            os.write(`Tags: ${data.tags.map((tag) => tag.name).join(' ')}\n`);
+            os.write('Authors:\n');
+            data.authors.forEach((author) => {
+                os.write(`* ${author.name}\n`);
+            });
+            os.write(`Total Installs: ${data.installs}\n`);
+            os.write(`Total Plays: ${data.plays}\n`);
+            os.write(`Total Plays (14 days): ${data.plays_14d}\n`);
+            os.write(`Released: ${new Date(data.released).toLocaleString()}\n`);
+            os.write(`Updated: ${new Date(data.updated).toLocaleString()}\n`);
+            os.write('\n');
+            os.write(`Available Versions\n`);
+            os.write(`-------------------------\n`);
+            data.versions.forEach((version) => {
+                os.write(`${version.id} - ${version.name}\n`);
+            });
         }
     }
 };
