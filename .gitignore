@@ -42,3 +42,6 @@ node_modules/
 ## Transpiled Source ##
 /lib/
 /types/
+
+# ESLint Cache #
+.eslintcache
