@@ -1,3 +1,4 @@
+import {escape} from 'node:querystring';
 import {Writable} from 'node:stream';
 import {CommandModule} from 'yargs';
 import {GlobalCLIOptions, ModpackManifest} from '../types';
@@ -10,7 +11,6 @@ import {
     setRequestLimit,
     setUserAgent
 } from '../helpers/net';
-import {escape} from 'node:querystring';
 
 /**
  * The logger for this module.
