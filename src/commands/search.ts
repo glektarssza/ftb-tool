@@ -12,6 +12,9 @@ import {
 } from '../helpers/net';
 import {escape} from 'node:querystring';
 
+/**
+ * The logger for this module.
+ */
 const logger = new Logger('search');
 
 /**
