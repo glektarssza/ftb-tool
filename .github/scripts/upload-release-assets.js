@@ -7,7 +7,7 @@ module.exports = async ({ github, context, core }) => {
         withFileTypes: true,
         encoding: 'utf-8'
     })).filter((item) => item.isFile());
-    core.info(`Uploading ${items.length} assets to release ${context.event.release.id}...`);
+    core.info(`Uploading ${items.length} assets to release ${context.payload.release.id}...`);
     for (const artifact of items) {
         const artifactPath = path.join(artifact.path, artifact.name);
         core.info(`Reading ${artifact.name} from ${artifactPath}...`);
@@ -16,7 +16,7 @@ module.exports = async ({ github, context, core }) => {
         await github.rest.repos.uploadReleaseAsset({
             owner,
             repo,
-            release_id: context.event.release.id,
+            release_id: context.payload.release.id,
             name: artifact.name,
             data
         });
