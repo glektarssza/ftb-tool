@@ -1,7 +1,7 @@
 import {escape} from 'node:querystring';
 import {Writable} from 'node:stream';
 import {CommandModule} from 'yargs';
-import {GlobalCLIOptions, ModpackManifest} from '../../types';
+import {ModpackManifest} from '../../types';
 import {setVerbose, Logger} from '../../helpers/logging';
 import {createWritableStream} from '../../helpers/fs';
 import {
@@ -11,6 +11,7 @@ import {
     setRequestLimit,
     setUserAgent
 } from '../../helpers/net';
+import {ModpackCLIOptions} from '.';
 
 /**
  * The logger for this module.
@@ -20,7 +21,7 @@ const logger = new Logger('command:modpack:search');
 /**
  * The command-line options for the `search` command.
  */
-export interface SearchCLIOptions extends GlobalCLIOptions {
+export interface SearchCLIOptions extends ModpackCLIOptions {
     /**
      * The term to search for.
      */
@@ -91,7 +92,7 @@ interface SearchResponseData {
 /**
  * The `search` command.
  */
-export const command: CommandModule<GlobalCLIOptions, SearchCLIOptions> = {
+export const command: CommandModule<ModpackCLIOptions, SearchCLIOptions> = {
     command: 'search <term>',
     describe: 'Search the Feed the Beast API for the given term.',
     builder(yargs) {

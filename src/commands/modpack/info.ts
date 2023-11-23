@@ -1,5 +1,5 @@
 import {CommandModule} from 'yargs';
-import {GlobalCLIOptions, ModpackManifest} from '../../types';
+import {ModpackManifest} from '../../types';
 import {setVerbose, Logger} from '../../helpers/logging';
 import {createWritableStream} from '../../helpers/fs';
 import {
@@ -10,6 +10,7 @@ import {
     setUserAgent
 } from '../../helpers/net';
 import {Writable} from 'stream';
+import {ModpackCLIOptions} from '.';
 
 /**
  * The logger for this module.
@@ -19,7 +20,7 @@ const logger = new Logger('command:modpack:info');
 /**
  * The command-line options for the `info` command.
  */
-export interface InfoCLIOptions extends GlobalCLIOptions {
+export interface InfoCLIOptions extends ModpackCLIOptions {
     /**
      * The ID of the modpack to get information for.
      */
@@ -52,7 +53,7 @@ export interface InfoCLIOptions extends GlobalCLIOptions {
 /**
  * The `info` command.
  */
-export const command: CommandModule<GlobalCLIOptions, InfoCLIOptions> = {
+export const command: CommandModule<ModpackCLIOptions, InfoCLIOptions> = {
     command: 'info <id>',
     describe: 'Get the information for a Feed the Beast modpack.',
     builder(yargs) {
