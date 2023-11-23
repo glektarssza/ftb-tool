@@ -1,0 +1,49 @@
+name: Bug Report
+description: Report that something is not working as expected.
+labels:
+  - bug
+body:
+  - id: operating-system
+    label: Operating System
+    type: dropdown
+    options:
+      - Windows
+      - Linux
+      - macOS
+    validations:
+      required: true
+  - id: app-version
+    label: App Version
+    type: input
+    placeholder: vX.Y.Z
+    validations:
+      required: true
+  - id: reproduction-steps
+    label: Steps to Reproduce
+    description: What you were trying to do that caused the issue.
+    type: textarea
+    placeholder: |
+      1. Do thing
+      2. Do another thing
+    validations:
+      required: true
+  - id: expected-results
+    label: Expected Results
+    type: textarea
+    placeholder: |
+      * Things happened!
+    validations:
+      required: true
+  - id: actual-results
+    label: Actual Results
+    type: textarea
+    placeholder: |
+      * Things happened that shouldn't have!
+    validations:
+      required: true
+  - id: additional-details
+    label: Additional Details
+    description: Any extra information you think would be helpful.
+    type: textarea
+    validations:
+      required: false
