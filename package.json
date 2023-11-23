@@ -17,8 +17,10 @@
         "type": "git",
         "url": "https://github.com/glektarssza/ftb-tool"
     },
+    "bin": {
+        "ftb-tool": "./lib/ftb-tool.js"
+    },
     "directories": {
-        "bin": "./bin/",
         "doc": "./docs/",
         "lib": "./lib/",
         "man": "./docs/man/",
