@@ -1,4 +1,3 @@
-import {command as info} from './info';
-import {command as search} from './search';
+import {command as modpack} from './modpack';
 
-export default [search, info];
+export default [modpack];

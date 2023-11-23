@@ -1,21 +1,21 @@
 import {escape} from 'node:querystring';
 import {Writable} from 'node:stream';
 import {CommandModule} from 'yargs';
-import {GlobalCLIOptions, ModpackManifest} from '../types';
-import {setVerbose, Logger} from '../helpers/logging';
-import {createWritableStream} from '../helpers/fs';
+import {GlobalCLIOptions, ModpackManifest} from '../../types';
+import {setVerbose, Logger} from '../../helpers/logging';
+import {createWritableStream} from '../../helpers/fs';
 import {
     getFTB,
     setRequestTimeout,
     setFlameAPIKey,
     setRequestLimit,
     setUserAgent
-} from '../helpers/net';
+} from '../../helpers/net';
 
 /**
  * The logger for this module.
  */
-const logger = new Logger('command:search');
+const logger = new Logger('command:modpack:search');
 
 /**
  * The command-line options for the `search` command.
