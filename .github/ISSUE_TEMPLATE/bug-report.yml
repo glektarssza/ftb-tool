@@ -4,46 +4,52 @@ labels:
   - bug
 body:
   - id: operating-system
-    label: Operating System
     type: dropdown
-    options:
-      - Windows
-      - Linux
-      - macOS
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - Linux
+        - macOS
     validations:
       required: true
   - id: app-version
-    label: App Version
     type: input
-    placeholder: vX.Y.Z
+    attributes:
+      label: App Version
+      placeholder: vX.Y.Z
     validations:
       required: true
   - id: reproduction-steps
-    label: Steps to Reproduce
-    description: What you were trying to do that caused the issue.
     type: textarea
-    placeholder: |
-      1. Do thing
-      2. Do another thing
+    attributes:
+      label: Steps to Reproduce
+      description: What you were trying to do that caused the issue.
+      placeholder: |
+        1. Do thing
+        2. Do another thing
     validations:
       required: true
   - id: expected-results
-    label: Expected Results
     type: textarea
-    placeholder: |
-      * Things happened!
+    attributes:
+      label: Expected Results
+      placeholder: |
+        * Things happened!
     validations:
       required: true
   - id: actual-results
-    label: Actual Results
     type: textarea
-    placeholder: |
-      * Things happened that shouldn't have!
+    attributes:
+      label: Actual Results
+      placeholder: |
+        * Things happened that shouldn't have!
     validations:
       required: true
   - id: additional-details
-    label: Additional Details
-    description: Any extra information you think would be helpful.
     type: textarea
+    attributes:
+      label: Additional Details
+      description: Any extra information you think would be helpful.
     validations:
       required: false
