@@ -11,8 +11,8 @@ export interface VersionCLIOptions extends GlobalCLIOptions {}
  * The `modpack` command.
  */
 export const command: CommandModule<GlobalCLIOptions, VersionCLIOptions> = {
-    command: 'modpack',
-    describe: 'Operations relating to modpacks.',
+    command: 'version',
+    describe: 'Operations relating to modpack versions.',
     builder(yargs) {
         return yargs.command(info);
     },
