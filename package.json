@@ -28,7 +28,7 @@
     },
     "scripts": {
         "prepare": "husky install",
-        "dev": "tsx ./src/cli.ts",
+        "dev": "tsx ./src/ftb-tool.ts",
         "lint": "eslint --ext .ts ./src/",
         "lint:cache": "npm run lint -- --cache",
         "lint:fix": "npm run lint -- --fix",
