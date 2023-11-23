@@ -6,7 +6,7 @@ export const APP_NAME = 'ftb-tool';
 /**
  * The version of the application.
  */
-export const APP_VERSION = '0.0.0';
+export const APP_VERSION = '0.1.0';
 
 /**
  * The default user agent to use when making network requests.
