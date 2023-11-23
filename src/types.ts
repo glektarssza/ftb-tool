@@ -522,9 +522,137 @@ export interface MinimalVersionManifest {
 }
 
 /**
+ * Information about a modpack version file that lives on CurseForge.
+ */
+export interface FileCurseForgeInfo {
+    /**
+     * The project ID.
+     */
+    project: number;
+
+    /**
+     * The file ID.
+     */
+    file: number;
+}
+
+/**
+ * An enumeration of known modpack version file types.
+ */
+export enum FileType {
+    /**
+     * A configuration file.
+     */
+    Config = 'config',
+
+    /**
+     * A mod file.
+     */
+    Mod = 'mod',
+
+    /**
+     * A script file.
+     */
+    Script = 'script',
+
+    /**
+     * A resource file.
+     */
+    Resource = 'resource'
+}
+
+/**
+ * Information about a file in a modpack version.
+ */
+export interface ModpackVersionFile {
+    /**
+     * The ID of the file.
+     */
+    id: number;
+
+    /**
+     * The name of the file.
+     */
+    name: string;
+
+    /**
+     * The path of the file inside the modpack.
+     */
+    path: string;
+
+    /**
+     * The version of the file.
+     */
+    version: string;
+
+    /**
+     * The URL from which to download the file.
+     *
+     * This field can be empty in which case the `curseforge` field should be
+     * populated.
+     */
+    url: string;
+
+    /**
+     * A list of mirror URLs which can be used if the main URL is not available.
+     */
+    mirrors: string[];
+
+    /**
+     * The SHA1 hash of the file contents.
+     */
+    sha1: string;
+
+    /**
+     * The size of the file, in bytes.
+     */
+    size: number;
+
+    /**
+     * Whether the file is only meant for clients.
+     */
+    clientonly: boolean;
+
+    /**
+     * Whether the file is only meant for clients.
+     */
+    serveronly: boolean;
+
+    /**
+     * Whether the file is optional
+     */
+    optional: boolean;
+
+    /**
+     * A list of tags associated with the file.
+     */
+    tags: Tag[];
+
+    /**
+     * The timestamp at which the file was updated.
+     */
+    updated: number;
+
+    /**
+     * The type of the file.
+     */
+    type: FileType;
+
+    /**
+     * The information about the file on CurseForge.
+     */
+    curseforge?: FileCurseForgeInfo | undefined;
+}
+
+/**
  * A manifest of a modpack version.
  */
 export interface ModpackVersionManifest extends MinimalVersionManifest {
+    /**
+     * A list of files that can be downloaded to retrieve the modpack.
+     */
+    files: ModpackVersionFile[];
+
     /**
      * The number of times the modpack version has been installed.
      */
@@ -571,4 +699,14 @@ export interface ModpackVersionManifest extends MinimalVersionManifest {
      * When the modpack version was last updated.
      */
     updated: number;
+}
+
+/**
+ * Data about a file from the CurseForge API.
+ */
+export interface CurseForgeFileManifest {
+    /**
+     * The URL from which the file can be downloaded.
+     */
+    downloadUrl: string;
 }
