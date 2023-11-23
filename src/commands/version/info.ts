@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {CommandModule} from 'yargs';
 import {setVerbose, Logger} from '../../helpers/logging';
 import {createWritableStream} from '../../helpers/fs';
@@ -106,7 +107,7 @@ export const command: CommandModule<VersionCLIOptions, InfoCLIOptions> = {
             setUserAgent(args.userAgent);
         }
         logger.info(
-            `Getting information for modpack with ID ${args.modpackId}, version with ID "${args.versionId}"`
+            `Getting information for modpack with ID "${args.modpackId}", version with ID "${args.versionId}"`
         );
         const data = await getFTB<ModpackVersionManifest>(
             `/modpack/${args.modpackId}/${args.versionId}`
@@ -125,29 +126,20 @@ export const command: CommandModule<VersionCLIOptions, InfoCLIOptions> = {
             }
             os.write(`${outputData}\n`);
         } else {
+            //-- Only fetch the changelog if we need it
+            //TODO: This is probably Markdown data, parse and format
+            const {data: changelog} = await axios.get<string>(data.changelog);
             os.write(`${data.name}\n`);
             os.write(`-------------------------\n`);
             os.write('\n');
-            // os.write(`${data.synopsis}\n`);
-            // os.write('\n');
+            os.write(`${changelog}\n`);
+            os.write('\n');
             os.write(`ID: ${data.id}\n`);
-            // os.write(`Tags: ${data.tags.map((tag) => tag.name).join(' ')}\n`);
-            // os.write('Authors:\n');
-            // data.authors.forEach((author) => {
-            //     os.write(`* ${author.name}\n`);
-            // });
-            // os.write(`Total Installs: ${data.installs}\n`);
-            // os.write(`Total Plays: ${data.plays}\n`);
-            // os.write(`Total Plays (14 days): ${data.plays_14d}\n`);
-            // os.write(
-            //     `Released: ${new Date(data.released * 1000).toLocaleString()}\n`
-            // );
-            // os.write('\n');
-            // os.write(`Available Versions\n`);
-            // os.write(`-------------------------\n`);
-            // data.versions.forEach((version) => {
-            //     os.write(`* ${version.name} (ID: ${version.id})\n`);
-            // });
+            os.write(`Total Installs: ${data.installs}\n`);
+            os.write(`Total Plays: ${data.plays}\n`);
+            os.write(
+                `Updated: ${new Date(data.updated * 1000).toLocaleString()}\n`
+            );
         }
     }
 };

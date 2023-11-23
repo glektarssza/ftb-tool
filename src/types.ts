@@ -524,14 +524,51 @@ export interface MinimalVersionManifest {
 /**
  * A manifest of a modpack version.
  */
-export interface ModpackVersionManifest {
+export interface ModpackVersionManifest extends MinimalVersionManifest {
     /**
-     * The ID of the modpack version.
+     * The number of times the modpack version has been installed.
      */
-    id: number;
+    installs: number;
 
     /**
-     * The name of the modpack version.
+     * The number of times the modpack version has been played.
      */
-    name: string;
+    plays: number;
+
+    /**
+     * The timestamp at which this data was refreshed.
+     */
+    refreshed: number;
+
+    /**
+     * A URL to the changelog for the modpack version.
+     */
+    changelog: string;
+
+    /**
+     * The ID of the parent modpack.
+     */
+    parent: number;
+
+    /**
+     * Unknown field.
+     *
+     * TODO: Figure out this field's purpose.
+     */
+    notification: string;
+
+    /**
+     * a list of links associated with the modpack version.
+     */
+    links: Link[];
+
+    /**
+     * The response status.
+     */
+    status: ResponseStatus;
+
+    /**
+     * When the modpack version was last updated.
+     */
+    updated: number;
 }
