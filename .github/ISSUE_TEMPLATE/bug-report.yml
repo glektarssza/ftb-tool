@@ -53,3 +53,12 @@ body:
       description: Any extra information you think would be helpful.
     validations:
       required: false
+  - id: acknowledgement
+    type: checkboxes
+    attributes:
+      label: "I acknowledge that:"
+      options:
+        - label: I have searched for similar issues and found none.
+          required: true
+    validations:
+      required: true
