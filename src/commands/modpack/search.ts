@@ -19,7 +19,7 @@ import {ModpackCLIOptions} from '.';
 const logger = new Logger('command:modpack:search');
 
 /**
- * The command-line options for the `search` command.
+ * The command-line options for the `modpack search` sub-command.
  */
 export interface SearchCLIOptions extends ModpackCLIOptions {
     /**
@@ -90,7 +90,7 @@ interface SearchResponseData {
 }
 
 /**
- * The `search` command.
+ * The `modpack search` sub-command.
  */
 export const command: CommandModule<ModpackCLIOptions, SearchCLIOptions> = {
     command: 'search <term>',

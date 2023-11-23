@@ -520,3 +520,18 @@ export interface MinimalVersionManifest {
      */
     private: boolean;
 }
+
+/**
+ * A manifest of a modpack version.
+ */
+export interface ModpackVersionManifest {
+    /**
+     * The ID of the modpack version.
+     */
+    id: number;
+
+    /**
+     * The name of the modpack version.
+     */
+    name: string;
+}

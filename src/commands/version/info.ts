@@ -1,5 +1,4 @@
 import {CommandModule} from 'yargs';
-import {ModpackManifest} from '../../types';
 import {setVerbose, Logger} from '../../helpers/logging';
 import {createWritableStream} from '../../helpers/fs';
 import {
@@ -10,21 +9,27 @@ import {
     setUserAgent
 } from '../../helpers/net';
 import {Writable} from 'stream';
-import {ModpackCLIOptions} from '.';
+import {VersionCLIOptions} from '.';
+import {ModpackVersionManifest} from '../../types';
 
 /**
  * The logger for this module.
  */
-const logger = new Logger('command:modpack:info');
+const logger = new Logger('command:version:info');
 
 /**
- * The command-line options for the `modpack info` sub-command.
+ * The command-line options for the `version info` sub-command.
  */
-export interface InfoCLIOptions extends ModpackCLIOptions {
+export interface InfoCLIOptions extends VersionCLIOptions {
     /**
      * The ID of the modpack to get information for.
      */
-    id: number;
+    modpackId: number;
+
+    /**
+     * The ID of the modpack version to get information for.
+     */
+    versionId: number;
 
     /**
      * Whether to output results as JSON.
@@ -51,16 +56,22 @@ export interface InfoCLIOptions extends ModpackCLIOptions {
 }
 
 /**
- * The `modpack info` sub-command.
+ * The `version info` sub-command.
  */
-export const command: CommandModule<ModpackCLIOptions, InfoCLIOptions> = {
-    command: 'info <id>',
-    describe: 'Get the information for a Feed the Beast modpack.',
+export const command: CommandModule<VersionCLIOptions, InfoCLIOptions> = {
+    command: 'info <modpackId> <versionId>',
+    describe: 'Get the information for a Feed the Beast modpack version.',
     builder(yargs) {
         return yargs
-            .positional('id', {
+            .positional('modpackId', {
                 type: 'number',
                 description: 'The ID of the modpack to get information for.',
+                demandOption: true
+            })
+            .positional('versionId', {
+                type: 'number',
+                description:
+                    'The ID of the modpack version to get information for.',
                 demandOption: true
             })
             .option('json', {
@@ -94,8 +105,12 @@ export const command: CommandModule<ModpackCLIOptions, InfoCLIOptions> = {
         if (args.userAgent) {
             setUserAgent(args.userAgent);
         }
-        logger.info(`Getting information for modpack with ID "${args.id}"`);
-        const data = await getFTB<ModpackManifest>(`/modpack/${args.id}`);
+        logger.info(
+            `Getting information for modpack with ID ${args.modpackId}, version with ID "${args.versionId}"`
+        );
+        const data = await getFTB<ModpackVersionManifest>(
+            `/modpack/${args.modpackId}/${args.versionId}`
+        );
         let os: Writable = process.stdout;
         if (args.output !== '-') {
             os = await createWritableStream(args.output);
@@ -113,26 +128,26 @@ export const command: CommandModule<ModpackCLIOptions, InfoCLIOptions> = {
             os.write(`${data.name}\n`);
             os.write(`-------------------------\n`);
             os.write('\n');
-            os.write(`${data.synopsis}\n`);
-            os.write('\n');
+            // os.write(`${data.synopsis}\n`);
+            // os.write('\n');
             os.write(`ID: ${data.id}\n`);
-            os.write(`Tags: ${data.tags.map((tag) => tag.name).join(' ')}\n`);
-            os.write('Authors:\n');
-            data.authors.forEach((author) => {
-                os.write(`* ${author.name}\n`);
-            });
-            os.write(`Total Installs: ${data.installs}\n`);
-            os.write(`Total Plays: ${data.plays}\n`);
-            os.write(`Total Plays (14 days): ${data.plays_14d}\n`);
-            os.write(
-                `Released: ${new Date(data.released * 1000).toLocaleString()}\n`
-            );
-            os.write('\n');
-            os.write(`Available Versions\n`);
-            os.write(`-------------------------\n`);
-            data.versions.forEach((version) => {
-                os.write(`* ${version.name} (ID: ${version.id})\n`);
-            });
+            // os.write(`Tags: ${data.tags.map((tag) => tag.name).join(' ')}\n`);
+            // os.write('Authors:\n');
+            // data.authors.forEach((author) => {
+            //     os.write(`* ${author.name}\n`);
+            // });
+            // os.write(`Total Installs: ${data.installs}\n`);
+            // os.write(`Total Plays: ${data.plays}\n`);
+            // os.write(`Total Plays (14 days): ${data.plays_14d}\n`);
+            // os.write(
+            //     `Released: ${new Date(data.released * 1000).toLocaleString()}\n`
+            // );
+            // os.write('\n');
+            // os.write(`Available Versions\n`);
+            // os.write(`-------------------------\n`);
+            // data.versions.forEach((version) => {
+            //     os.write(`* ${version.name} (ID: ${version.id})\n`);
+            // });
         }
     }
 };
