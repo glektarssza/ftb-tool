@@ -11,7 +11,7 @@ import {
 } from '../../helpers/net';
 import {Writable} from 'stream';
 import {VersionCLIOptions} from '.';
-import {ModpackVersionManifest} from '../../types';
+import {ModpackVersionManifest, ResponseStatus} from '../../types';
 
 /**
  * The logger for this module.
@@ -54,6 +54,25 @@ export interface InfoCLIOptions extends VersionCLIOptions {
      * Defaults to `stdout`.
      */
     output: string;
+}
+
+export interface ChangelogResponseData {
+    /**
+     * The status of the request response.
+     */
+    status: ResponseStatus;
+
+    /**
+     * The timestamp at which the changelog was updated.
+     */
+    updated: number;
+
+    /**
+     * The content of the changelog.
+     *
+     * This data is in Markdown.
+     */
+    content: string;
 }
 
 /**
@@ -128,7 +147,9 @@ export const command: CommandModule<VersionCLIOptions, InfoCLIOptions> = {
         } else {
             //-- Only fetch the changelog if we need it
             //TODO: This is probably Markdown data, parse and format
-            const {data: changelog} = await axios.get<string>(data.changelog);
+            const {
+                data: {content: changelog}
+            } = await axios.get<ChangelogResponseData>(data.changelog);
             os.write(`${data.name}\n`);
             os.write(`-------------------------\n`);
             os.write('\n');
