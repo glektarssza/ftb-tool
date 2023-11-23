@@ -92,9 +92,6 @@ jobs:
       - id: npm-build-standalone
         name: Run "npm run build:standalone"
         run: npm run build:standalone
-      - id: rename-standalone-binary
-        name: Rename standalone binary
-        run: mv ./dist/cli${{(startsWith(matrix.os, 'windows') && '.exe') || ''}} ./dist/ftb-tool${{(startsWith(matrix.os, 'windows') && '.exe') || ''}}
       - id: upload-standalone-binary
         name: Upload standalone binary
         uses: actions/upload-artifact@v3
