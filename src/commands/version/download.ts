@@ -1,5 +1,6 @@
 import path from 'node:path';
 import {Readable} from 'node:stream';
+import {cwd} from 'node:process';
 import {CommandModule} from 'yargs';
 import {setVerbose, Logger} from '../../helpers/logging';
 import {
@@ -12,15 +13,17 @@ import {
     getFTBFile
 } from '../../helpers/net';
 import {VersionCLIOptions} from '.';
-import {ModpackVersionManifest} from '../../types';
+import {ModpackVersionManifest, ModpackVersionFile} from '../../types';
 import {
-    createReadableStream,
+    checkFileIntegrity,
+    copyDirectory,
+    createOSTempDirectory,
     createWritableStream,
-    isFile
-} from '../../helpers';
-import {AxiosError} from 'axios';
-import {createHash} from 'node:crypto';
-import {copyFile, mkdir, rm, unlink} from 'node:fs/promises';
+    isFile,
+    removeDirectory,
+    removeFile
+} from '../../helpers/fs';
+import {isNil} from '../../helpers';
 
 /**
  * The logger for this module.
@@ -133,6 +136,85 @@ export interface DownloadCLIOptions extends VersionCLIOptions {
     cleanupTemp: boolean;
 }
 
+/**
+ * Check if a file should be downloaded.
+ *
+ * @param args - The command-line options.
+ * @param file - The file to check.
+ *
+ * @returns A promise that resolves to `true` if the file should be downloaded
+ * again or `false` if the file is okay on the local disk.
+ */
+async function shouldDownloadFile(
+    args: DownloadCLIOptions,
+    file: ModpackVersionFile
+): Promise<boolean> {
+    const tempOutputPath = path.join(args.tempPath, file.path, file.name);
+    const exists = await isFile(tempOutputPath);
+    if (exists && args.checkIntegrity) {
+        return !(await checkFileIntegrity(tempOutputPath, file.sha1));
+    }
+    return !exists;
+}
+
+async function process(args: DownloadCLIOptions): Promise<void> {
+    const isArchive = args.archive !== ArchiveType.None;
+    const finalDestination = path.join(
+        args.outputDir,
+        `ftb-${args.modpackId}-${args.versionId}`,
+        isArchive ? `.${args.archive}` : ''
+    );
+    logger.info(
+        `Downloading modpack with ID "${args.modpackId}", version with ID "${args.versionId}"`
+    );
+    const data = await getFTB<ModpackVersionManifest>(
+        `/modpack/${args.modpackId}/${args.versionId}`
+    );
+    const clientFiles = data.files.filter((file) => !file.serveronly);
+    const filesToDownload = (
+        await Promise.all(
+            clientFiles.map(async (file) => {
+                if (await shouldDownloadFile(args, file)) {
+                    return file;
+                }
+                return null;
+            })
+        )
+    ).filter((file): file is ModpackVersionFile => !isNil(file));
+    logger.info(`Downloading ${filesToDownload.length} files...`);
+    const downloads = filesToDownload.map(async (file) => {
+        const tempOutputPath = path.join(args.tempPath, file.path, file.name);
+        logger.info(`Downloading "${file.name}" to "${tempOutputPath}"...`);
+        if (await isFile(tempOutputPath)) {
+            await removeFile(tempOutputPath);
+        }
+        const os = await createWritableStream(tempOutputPath);
+        let is: Readable;
+        if (file.curseforge) {
+            is = await getFlameFile(
+                file.curseforge.project,
+                file.curseforge.file
+            );
+        } else {
+            is = await getFTBFile(file.url);
+        }
+        await new Promise<void>((resolve, reject) => {
+            is.addListener('end', resolve).addListener('error', reject);
+            is.pipe(os);
+        }).finally(() => {
+            os.close();
+        });
+    });
+    //-- Wait for all downloads to complete
+    await Promise.all(downloads);
+    if (args.archive === ArchiveType.None) {
+        logger.info(`Copying "${args.tempPath}" to "${finalDestination}"...`);
+        await copyDirectory(args.tempPath, finalDestination);
+    } else {
+        // TODO: Archive files
+    }
+}
+
 export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
     command: 'download <modpackId> <versionId>',
     describe: 'Download a given version of a given modpack.',
@@ -152,7 +234,7 @@ export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
             .option('outputDir', {
                 type: 'string',
                 description: 'The location to store the downloaded file(s) in.',
-                default: process.cwd(),
+                default: cwd(),
                 defaultDescription:
                     'The current working directory if "archive" is set, a directory named "ftb-{MODPACK_ID}" otherwise.',
                 normalize: true
@@ -222,166 +304,16 @@ export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
         if (args.userAgent) {
             setUserAgent(args.userAgent);
         }
-        const isArchive = args.archive !== ArchiveType.None;
-        const finalDestination = path.join(
-            args.outputDir,
-            `ftb-${args.modpackId}-${args.versionId}`,
-            isArchive ? `.${args.archive}` : ''
-        );
-        logger.info(
-            `Downloading modpack with ID "${args.modpackId}", version with ID "${args.versionId}"`
-        );
-        const data = await getFTB<ModpackVersionManifest>(
-            `/modpack/${args.modpackId}/${args.versionId}`
-        );
-        logger.info(`Downloading ${data.files.length} files...`);
+        if (args.tempPath === '') {
+            args.tempPath = (await createOSTempDirectory('ftb-tool-')).toString(
+                'utf-8'
+            );
+        }
         try {
-            const downloads = data.files.map(async (file) => {
-                if (file.serveronly) {
-                    return;
-                }
-                if (!isArchive) {
-                    //-- Check whether file already exists in output path
-                    const fullPath = path.join(
-                        args.outputDir,
-                        file.path,
-                        file.name
-                    );
-                    if (await isFile(fullPath)) {
-                        if (args.checkIntegrity) {
-                            const hasher = createHash('sha1');
-                            (await createReadableStream(fullPath)).pipe(hasher);
-                            const existingHash = hasher.digest('hex');
-                            if (existingHash === file.sha1) {
-                                logger.warn(
-                                    `File "${path.join(
-                                        file.path,
-                                        file.name
-                                    )}" exists and passed integrity check, skipping`
-                                );
-                                return;
-                            } else {
-                                logger.warn(
-                                    `File "${path.join(
-                                        file.path,
-                                        file.name
-                                    )}" exists but failed integrity check, downloading again`
-                                );
-                            }
-                        } else {
-                            logger.warn(
-                                `Skipping check of hash for "${path.join(
-                                    file.path,
-                                    file.name
-                                )}"`
-                            );
-                            //-- File exists and is okay, skip it
-                            logger.info(
-                                `File "${path.join(
-                                    file.path,
-                                    file.name
-                                )}" exists, skipping`
-                            );
-                            return;
-                        }
-                        await unlink(fullPath);
-                    }
-                }
-                const outputPath = path.join(
-                    args.tempPath,
-                    file.path,
-                    file.name
-                );
-                const os = await createWritableStream(outputPath);
-                let is: Readable;
-                if (file.curseforge) {
-                    is = await getFlameFile(
-                        file.curseforge.project,
-                        file.curseforge.file
-                    );
-                } else if (file.url) {
-                    try {
-                        is = await getFTBFile(file.url);
-                    } catch (ex) {
-                        if (ex instanceof AxiosError) {
-                            if (ex.status === 404) {
-                                logger.warn(
-                                    `Got 404 for "${path.join(
-                                        file.path,
-                                        file.name
-                                    )}", skipping`
-                                );
-                                return;
-                            }
-                        }
-                        throw ex;
-                    }
-                } else {
-                    os.close();
-                    throw new Error(
-                        `Cannot download "${path.join(
-                            file.path,
-                            file.name
-                        )}", no URL`
-                    );
-                }
-                let tries = args.perFileRetries;
-                do {
-                    tries--;
-                    try {
-                        await new Promise<void>((resolve, reject) => {
-                            is.addListener('error', (err) => {
-                                reject(err);
-                            });
-                            is.addListener('end', () => {
-                                resolve();
-                            });
-                            is.pipe(os);
-                        }).finally(() => {
-                            os.close();
-                        });
-                    } catch (ex) {
-                        await unlink(outputPath);
-                        logger.warn(
-                            `Failed to download "${path.join(
-                                file.path,
-                                file.name
-                            )}", retrying up to ${tries} more time${
-                                tries === 1 ? '' : 's'
-                            }...`
-                        );
-                        continue;
-                    }
-                    break;
-                } while (tries > 0);
-                if (!(await isFile(outputPath))) {
-                    throw new Error(
-                        `Failed to download "${path.join(
-                            file.path,
-                            file.name
-                        )}", aborting`
-                    );
-                }
-            });
-            await Promise.all(downloads);
-            if (!isArchive) {
-                await mkdir(finalDestination, {
-                    recursive: true
-                });
-                const copies = data.files.map(async (file) => {
-                    return copyFile(
-                        path.join(args.tempPath, file.path, file.name),
-                        path.join(finalDestination, file.path, file.name)
-                    );
-                });
-                await Promise.all(copies);
-            }
+            await process(args);
         } finally {
-            //-- Last thing we do is cleanup if asked to
             if (args.cleanupTemp) {
-                await rm(args.tempPath, {
-                    recursive: true
-                });
+                await removeDirectory(args.tempPath);
             }
         }
     }
