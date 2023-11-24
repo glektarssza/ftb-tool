@@ -60,8 +60,8 @@ jobs:
         name: Run "npm install"
         run: npm install
       - id: npm-test
-        name: Run "npm test:ci"
-        run: npm test:ci
+        name: Run "npm run test:ci"
+        run: npm run test:ci
   build:
     name: Build
     runs-on: ${{matrix.os}}
