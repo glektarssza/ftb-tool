@@ -48,3 +48,6 @@ dist/
 
 # ESLint Cache #
 .eslintcache
+
+## nyc Output ##
+.nyc_output/
