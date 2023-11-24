@@ -13,6 +13,8 @@ import {
     DEFAULT_NET_TIMEOUT,
     DEFAULT_USER_AGENT
 } from '../constants';
+import {Readable} from 'stream';
+import {CurseForgeFileManifest} from '../types';
 
 /**
  * An interface defining the shape of an item in a request queue.
@@ -177,6 +179,22 @@ function buildFTBRequestConfig(path: string): AxiosRequestConfig {
 
 /**
  * Build the Axios request config for making a request to the given path on the
+ * Feed the Beast API in order to download binary data.
+ *
+ * @param path - The path component of the request to make.
+ *
+ * @returns An Axios request config.
+ */
+function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
+    return {
+        ...buildFTBRequestConfig(path),
+        responseType: 'stream',
+        transformResponse: []
+    };
+}
+
+/**
+ * Build the Axios request config for making a request to the given path on the
  * CurseForge API.
  *
  * @param path - The path component of the request to make.
@@ -189,6 +207,22 @@ function buildFlameRequestConfig(path: string): AxiosRequestConfig {
         headers: {
             'X-API-Key': flameAPIKey
         }
+    };
+}
+
+/**
+ * Build the Axios request config for making a request to the given path on the
+ * CurseForge API in order to download binary data.
+ *
+ * @param path - The path component of the request to make.
+ *
+ * @returns An Axios request config.
+ */
+function buildFlameFileRequestConfig(path: string): AxiosRequestConfig {
+    return {
+        ...buildFlameRequestConfig(path),
+        responseType: 'stream',
+        transformResponse: []
     };
 }
 
@@ -309,6 +343,20 @@ export async function makeFTBRequest<T>(
 }
 
 /**
+ * Make a request to the Feed the Beast API to download binary data.
+ *
+ * @param request - The request to make.
+ *
+ * @returns A promise that resolves to the response of the request or rejects if
+ * an error occurs.
+ */
+export async function makeFTBFileRequest(
+    request: AxiosRequestConfig
+): Promise<AxiosResponse<Readable>> {
+    return makeRequest(ftb, request);
+}
+
+/**
  * Make a request to the CurseForge API.
  *
  * @typeparam T - The shape of the data expected as a response.
@@ -324,9 +372,24 @@ export async function makeFlameRequest<T>(
 }
 
 /**
+ * Make a request to the CurseForge API to download binary data.
+ *
+ * @param request - The request to make.
+ *
+ * @returns A promise that resolves to the response of the request or rejects if
+ * an error occurs.
+ */
+export async function makeFlameFileRequest(
+    request: AxiosRequestConfig
+): Promise<AxiosResponse<Readable>> {
+    return makeRequest(flame, request);
+}
+
+/**
  * Make a `GET` request to the Feed the Beast API.
  *
  * @typeparam T - The shape of the data expected as a response.
+ * @typeparam D - The shape of the data to send with the request.
  * @param path - The path to make the request to.
  *
  * @returns A promise that resolves to the response of the request or rejects if
@@ -346,9 +409,32 @@ export async function getFTB<T, D = unknown>(
 }
 
 /**
+ * Make a `GET` request to the Feed the Beast API.
+ *
+ * @typeparam D - The shape of the data to send with the request.
+ * @param path - The path to make the request to.
+ *
+ * @returns A promise that resolves to the response of the request or rejects if
+ * an error occurs.
+ */
+export async function getFTBFile<D = unknown>(
+    path: string,
+    data?: D | undefined
+): Promise<Readable> {
+    return (
+        await makeFTBFileRequest({
+            ...buildFTBFileRequestConfig(path),
+            method: 'GET',
+            data
+        })
+    ).data;
+}
+
+/**
  * Make a `GET` request to the CurseForge API.
  *
  * @typeparam T - The shape of the data expected as a response.
+ * @typeparam D - The shape of the data to send with the request.
  * @param path - The path to make the request to.
  *
  * @returns A promise that resolves to the response of the request or rejects if
@@ -361,6 +447,33 @@ export async function getFlame<T, D = unknown>(
     return (
         await makeFlameRequest<T>({
             ...buildFlameRequestConfig(path),
+            method: 'GET',
+            data
+        })
+    ).data;
+}
+
+/**
+ * Make a `GET` request to the CurseForge API.
+ *
+ * @typeparam D - The shape of the data to send with the request.
+ * @param projectId - The project ID which the file belongs to.
+ * @param fileId - The ID of the file to get.
+ *
+ * @returns A promise that resolves to the response of the request or rejects if
+ * an error occurs.
+ */
+export async function getFlameFile<D = unknown>(
+    projectId: number,
+    fileId: number,
+    data?: D | undefined
+): Promise<Readable> {
+    const {downloadUrl} = await getFlame<CurseForgeFileManifest>(
+        `/mods/${projectId}/files/${fileId}`
+    );
+    return (
+        await makeFlameFileRequest({
+            ...buildFlameFileRequestConfig(downloadUrl),
             method: 'GET',
             data
         })

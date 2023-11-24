@@ -1,11 +1,17 @@
+import {createHash} from 'node:crypto';
 import {constants, PathLike, ReadStream, WriteStream} from 'node:fs';
 import {
     access,
+    cp,
     CreateReadStreamOptions,
     CreateWriteStreamOptions,
+    mkdtemp,
     open,
+    rm,
     stat
 } from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
 
 /**
  * Determine whether a path exists.
@@ -171,4 +177,165 @@ export async function createWritableStream(
 ): Promise<WriteStream> {
     const fd = await open(path, 'w');
     return fd.createWriteStream(opts);
+}
+
+/**
+ * Check the integrity of a file.
+ *
+ * @param path - The path to the file to check the integrity of.
+ * @param hash - The hash to check against.
+ * @param algo - The hashing algorithm to use.
+ *
+ * @returns A promise that resolves to `true` if the file exists and has
+ * contents that match the provided hash or resolves to `false` if the file does
+ * not exist or does not match the provided hash.
+ */
+export async function checkFileIntegrity(
+    path: PathLike,
+    hash: string,
+    algo = 'sha1'
+): Promise<boolean> {
+    if (!(await isFile(path))) {
+        return false;
+    }
+    const digester = createHash(algo);
+    const is = await createReadableStream(path);
+    is.pipe(digester);
+    const fileHash = digester.digest('hex');
+    is.close();
+    return fileHash === hash;
+}
+
+/**
+ * Create a temporary directory.
+ *
+ * @param root - The root directory inside of which to create a temporary
+ * directory.
+ * @param prefix - The prefix to apply to the temporary directory.
+ *
+ * @returns A promise that resolves to the full path to the new temporary
+ * directory on success or rejects on an error.
+ */
+export async function createTempDirectory(
+    root: PathLike,
+    prefix: string
+): Promise<PathLike> {
+    if (!(await isDirectory(root))) {
+        throw new Error(
+            `Cannot create a temporary directory in "${root.toString(
+                'utf-8'
+            )}", not a directory`
+        );
+    }
+    const fullPrefix = path.join(root.toString('utf-8'), prefix);
+    return mkdtemp(fullPrefix, 'utf-8');
+}
+
+/**
+ * Create a temporary directory in the temporary file system for the operating
+ * system.
+ *
+ * @param prefix - The prefix to apply to the temporary directory.
+ *
+ * @returns A promise that resolves to the full path to the new temporary
+ * directory on success or rejects on an error.
+ */
+export async function createOSTempDirectory(prefix: string): Promise<PathLike> {
+    const osTempDir = tmpdir();
+    return createTempDirectory(osTempDir, prefix);
+}
+
+/**
+ * Remove a file.
+ *
+ * @param path - The path to the file to remove.
+ * @param force - Whether to forcefully remove the file.
+ *
+ * @returns A promise that resolves once the operation is completed or rejects
+ * if an error occurs.
+ */
+export async function removeFile(path: PathLike, force = false): Promise<void> {
+    if (!(await isFile(path))) {
+        throw new Error(`"${path.toString('utf-8')}" is not a file`);
+    }
+    await rm(path, {
+        recursive: false,
+        force
+    });
+}
+
+/**
+ * Remove a directory.
+ *
+ * @param path - The path to the directory to remove.
+ * @param force - Whether to forcefully remove the directory.
+ *
+ * @returns A promise that resolves once the operation is completed or rejects
+ * if an error occurs.
+ */
+export async function removeDirectory(
+    path: PathLike,
+    force = false
+): Promise<void> {
+    if (!(await isDirectory(path))) {
+        throw new Error(`"${path.toString('utf-8')}" is not a directory`);
+    }
+    await rm(path, {
+        recursive: true,
+        force
+    });
+}
+
+/**
+ * Copy a file to another location.
+ *
+ * @param source - The source file to copy.
+ * @param destination - The location to copy the source to.
+ * @param force - Whether to forcefully copy.
+ *
+ * @returns A promise that resolves once the operation is completed or rejects
+ * if an error occurs.
+ */
+export async function copyFile(
+    source: PathLike,
+    destination: PathLike,
+    force = false
+): Promise<void> {
+    if (!(await isFile(source))) {
+        throw new Error(`"${source.toString('utf-8')}" is not a file`);
+    }
+    if (await exists(destination)) {
+        throw new Error(`"${destination.toString('utf-8')}" already exists`);
+    }
+    await cp(source.toString('utf-8'), destination.toString('utf-8'), {
+        recursive: false,
+        force
+    });
+}
+
+/**
+ * Copy a directory and all its contents to another location.
+ *
+ * @param source - The source directory to copy.
+ * @param destination - The location to copy the source to.
+ * @param force - Whether to forcefully copy.
+ *
+ * @returns A promise that resolves once the operation is completed or rejects
+ * if an error occurs.
+ */
+export async function copyDirectory(
+    source: PathLike,
+    destination: PathLike,
+    force = false
+): Promise<void> {
+    if (!(await isDirectory(source))) {
+        throw new Error(`"${source.toString('utf-8')}" is not a directory`);
+    }
+    if (await exists(destination)) {
+        throw new Error(`"${destination.toString('utf-8')}" already exists`);
+    }
+    await cp(source.toString('utf-8'), destination.toString('utf-8'), {
+        recursive: true,
+        force
+    });
 }
