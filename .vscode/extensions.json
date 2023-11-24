@@ -3,6 +3,7 @@
         "dbaeumer.vscode-eslint",
         "github.vscode-pull-request-github",
         "github.remotehub",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "maty.vscode-mocha-sidebar"
     ]
 }
