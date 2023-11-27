@@ -349,4 +349,4 @@ const exported = {
     }
 };
 
-export default exported;
+export = exported;
