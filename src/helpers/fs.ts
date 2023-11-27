@@ -208,6 +208,9 @@ const exported = {
         path: PathLike,
         opts?: CreateWriteStreamOptions
     ): Promise<WriteStream> => {
+        if (!(await exported.isWritable(path))) {
+            throw new Error(`"${path.toString('utf-8')}" is not writable`);
+        }
         const fd = await open(path, 'w');
         return fd.createWriteStream(opts);
     },
