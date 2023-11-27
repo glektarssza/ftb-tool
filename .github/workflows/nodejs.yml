@@ -29,8 +29,8 @@ jobs:
         name: Run "npm install"
         run: npm install
       - id: npm-test
-        name: Run "npm run lint"
-        run: npm run lint
+        name: Run "npm run lint:ci"
+        run: npm run lint:ci
       # TODO: Annotate PR with ESLint results
   test:
     name: Test
