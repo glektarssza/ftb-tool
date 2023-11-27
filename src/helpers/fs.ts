@@ -151,6 +151,28 @@ const exported = {
             return false;
         }
     },
+
+    /**
+     * Determine if a path exists and is a writable file system item.
+     *
+     * Readable file system items are:
+     * * Files
+     * * Character devices
+     * * Block devices
+     * * Sockets
+     *
+     * @param path - The path to check.
+     *
+     * @returns A promise hat resolves to whether the path exists and is a
+     * writable file system item.
+     */
+    isWritable: async (path: PathLike): Promise<boolean> => {
+        try {
+            await access(path, constants.W_OK);
+            return true;
+        } catch {
+            return false;
+        }
     },
 
     /**
