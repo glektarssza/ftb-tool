@@ -227,7 +227,7 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(r).to.be.true;
         });
-        it('should return `false` if the path exists but is not a file', async () => {
+        it('should return `false` if the path exists but is not a directory', async () => {
             //-- Given
             const path = fake.system.filePath();
             existsStub.withArgs(path).resolves(true);
@@ -304,7 +304,7 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(statStub).to.have.been.calledOnceWith(path);
         });
-        it('should return `true` if the path is a file', async () => {
+        it('should return `true` if the path is a block device', async () => {
             //-- Given
             const path = fake.system.filePath();
             existsStub.withArgs(path).resolves(true);
@@ -320,7 +320,7 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(r).to.be.true;
         });
-        it('should return `false` if the path exists but is not a file', async () => {
+        it('should return `false` if the path exists but is not a block device', async () => {
             //-- Given
             const path = fake.system.filePath();
             existsStub.withArgs(path).resolves(true);
@@ -397,7 +397,7 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(statStub).to.have.been.calledOnceWith(path);
         });
-        it('should return `true` if the path is a file', async () => {
+        it('should return `true` if the path is a character device', async () => {
             //-- Given
             const path = fake.system.filePath();
             existsStub.withArgs(path).resolves(true);
@@ -413,7 +413,7 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(r).to.be.true;
         });
-        it('should return `false` if the path exists but is not a file', async () => {
+        it('should return `false` if the path exists but is not a character device', async () => {
             //-- Given
             const path = fake.system.filePath();
             existsStub.withArgs(path).resolves(true);
@@ -490,7 +490,7 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(statStub).to.have.been.calledOnceWith(path);
         });
-        it('should return `true` if the path is a file', async () => {
+        it('should return `true` if the path is a socket', async () => {
             //-- Given
             const path = fake.system.filePath();
             existsStub.withArgs(path).resolves(true);
@@ -506,7 +506,7 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(r).to.be.true;
         });
-        it('should return `false` if the path exists but is not a file', async () => {
+        it('should return `false` if the path exists but is not a socket', async () => {
             //-- Given
             const path = fake.system.filePath();
             existsStub.withArgs(path).resolves(true);
@@ -583,7 +583,7 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(statStub).to.have.been.calledOnceWith(path);
         });
-        it('should return `true` if the path is a file', async () => {
+        it('should return `true` if the path is a symbolic link', async () => {
             //-- Given
             const path = fake.system.filePath();
             existsStub.withArgs(path).resolves(true);
@@ -599,7 +599,7 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(r).to.be.true;
         });
-        it('should return `false` if the path exists but is not a file', async () => {
+        it('should return `false` if the path exists but is not a symbolic link', async () => {
             //-- Given
             const path = fake.system.filePath();
             existsStub.withArgs(path).resolves(true);
