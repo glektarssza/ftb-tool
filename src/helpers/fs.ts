@@ -162,6 +162,9 @@ const exported = {
         path: PathLike,
         opts?: CreateReadStreamOptions
     ): Promise<ReadStream> => {
+        if (!(await exported.isReadable(path))) {
+            throw new Error(`"${path.toString('utf-8')}" is not readable`);
+        }
         const fd = await open(path, 'r');
         return fd.createReadStream(opts);
     },
