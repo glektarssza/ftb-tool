@@ -628,52 +628,39 @@ describe('module:helpers.fs', () => {
         });
     });
     describe('.isReadable', () => {
-        let isBlockDeviceStub: SinonStub<
-            Parameters<typeof fsHelper.isBlockDevice>,
-            ReturnType<typeof fsHelper.isBlockDevice>
-        >;
-        let isCharacterDeviceStub: SinonStub<
-            Parameters<typeof fsHelper.isCharacterDevice>,
-            ReturnType<typeof fsHelper.isCharacterDevice>
-        >;
-        let isFileStub: SinonStub<
-            Parameters<typeof fsHelper.isFile>,
-            ReturnType<typeof fsHelper.isFile>
-        >;
-        let isSocketStub: SinonStub<
-            Parameters<typeof fsHelper.isSocket>,
-            ReturnType<typeof fsHelper.isSocket>
+        let accessStub: SinonStub<
+            Parameters<typeof fs.access>,
+            ReturnType<typeof fs.access>
         >;
         before(() => {
-            isBlockDeviceStub = stub(fsHelper, 'isBlockDevice');
-            isCharacterDeviceStub = stub(fsHelper, 'isCharacterDevice');
-            isFileStub = stub(fsHelper, 'isFile');
-            isSocketStub = stub(fsHelper, 'isSocket');
+            accessStub = stub(fs, 'access');
         });
         beforeEach(() => {
-            isBlockDeviceStub.reset();
-            isCharacterDeviceStub.reset();
-            isFileStub.reset();
-            isSocketStub.reset();
+            accessStub.reset();
 
-            isBlockDeviceStub.callThrough();
-            isCharacterDeviceStub.callThrough();
-            isFileStub.callThrough();
-            isSocketStub.callThrough();
+            accessStub.callThrough();
         });
         after(() => {
-            isBlockDeviceStub.restore();
-            isCharacterDeviceStub.restore();
-            isFileStub.restore();
-            isSocketStub.restore();
+            accessStub.restore();
         });
-        it('should return `true` if the path is a block device', async () => {
+        it('should call `fs.access` with the correct arguments', async () => {
             //-- Given
             const path = fake.system.filePath();
-            isBlockDeviceStub.withArgs(path).resolves(true);
-            isCharacterDeviceStub.withArgs(path).resolves(false);
-            isFileStub.withArgs(path).resolves(false);
-            isSocketStub.withArgs(path).resolves(false);
+            accessStub.withArgs(path, fs.constants.F_OK).resolves(undefined);
+
+            //-- When
+            await fsHelper.isReadable(path);
+
+            //-- Then
+            expect(accessStub).to.have.been.calledOnceWith(
+                path,
+                fs.constants.R_OK
+            );
+        });
+        it('should return `true` if the path is readable', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            accessStub.withArgs(path, fs.constants.R_OK).resolves(undefined);
 
             //-- When
             const r = await fsHelper.isReadable(path);
@@ -681,55 +668,12 @@ describe('module:helpers.fs', () => {
             //-- Then
             expect(r).to.be.true;
         });
-        it('should return `true` if the path is a character device', async () => {
+        it('should return `false` if the path is not readable', async () => {
             //-- Given
             const path = fake.system.filePath();
-            isBlockDeviceStub.withArgs(path).resolves(false);
-            isCharacterDeviceStub.withArgs(path).resolves(true);
-            isFileStub.withArgs(path).resolves(false);
-            isSocketStub.withArgs(path).resolves(false);
-
-            //-- When
-            const r = await fsHelper.isReadable(path);
-
-            //-- Then
-            expect(r).to.be.true;
-        });
-        it('should return `true` if the path is a file', async () => {
-            //-- Given
-            const path = fake.system.filePath();
-            isBlockDeviceStub.withArgs(path).resolves(false);
-            isCharacterDeviceStub.withArgs(path).resolves(false);
-            isFileStub.withArgs(path).resolves(true);
-            isSocketStub.withArgs(path).resolves(false);
-
-            //-- When
-            const r = await fsHelper.isReadable(path);
-
-            //-- Then
-            expect(r).to.be.true;
-        });
-        it('should return `true` if the path is a socket', async () => {
-            //-- Given
-            const path = fake.system.filePath();
-            isBlockDeviceStub.withArgs(path).resolves(false);
-            isCharacterDeviceStub.withArgs(path).resolves(false);
-            isFileStub.withArgs(path).resolves(false);
-            isSocketStub.withArgs(path).resolves(true);
-
-            //-- When
-            const r = await fsHelper.isReadable(path);
-
-            //-- Then
-            expect(r).to.be.true;
-        });
-        it('should return `false` if the path is not a character/block device, a file, or a socket', async () => {
-            //-- Given
-            const path = fake.system.filePath();
-            isBlockDeviceStub.withArgs(path).resolves(false);
-            isCharacterDeviceStub.withArgs(path).resolves(false);
-            isFileStub.withArgs(path).resolves(false);
-            isSocketStub.withArgs(path).resolves(false);
+            accessStub
+                .withArgs(path, fs.constants.R_OK)
+                .rejects(new Error('File does not exist'));
 
             //-- When
             const r = await fsHelper.isReadable(path);
