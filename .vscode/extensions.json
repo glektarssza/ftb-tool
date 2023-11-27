@@ -4,7 +4,7 @@
         "github.vscode-pull-request-github",
         "github.remotehub",
         "github.vscode-github-actions",
-        "maty.vscode-mocha-sidebar",
-        "github.vscode-codeql"
+        "github.vscode-codeql",
+        "hbenl.vscode-mocha-test-adapter"
     ]
 }
