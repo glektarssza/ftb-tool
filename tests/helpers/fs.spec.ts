@@ -1,5 +1,5 @@
 import chai, {expect} from 'chai';
-import {spy} from 'sinon';
+import {stub} from 'sinon';
 import sinonChai from 'sinon-chai';
 import {en, en_US, base, Faker} from '@faker-js/faker';
 import fs from 'node:fs/promises';
@@ -16,12 +16,13 @@ const fake = new Faker({
 
 describe('module:helpers.fs', () => {
     describe('.exists', () => {
-        const accessSpy = spy(fs, 'access');
+        const accessStub = stub(fs, 'access');
         beforeEach(() => {
-            accessSpy.resetHistory();
+            accessStub.reset();
+            accessStub.callThrough();
         });
         after(() => {
-            accessSpy.restore();
+            accessStub.restore();
         });
         it('should call fs.access with the correct arguments', async () => {
             //-- Given
@@ -31,10 +32,34 @@ describe('module:helpers.fs', () => {
             await fsHelper.exists(path);
 
             //-- Then
-            expect(accessSpy).to.have.been.calledOnceWithExactly(
+            expect(accessStub).to.have.been.calledOnceWithExactly(
                 path,
                 fs.constants.F_OK
             );
+        });
+        it('should return `true` if the file exists on the disk', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            accessStub.withArgs(path, fs.constants.F_OK).resolves(undefined);
+
+            //-- When
+            const r = await fsHelper.exists(path);
+
+            //-- Then
+            expect(r).to.be.true;
+        });
+        it('should return `false` if the file does not exist on the disk', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            accessStub
+                .withArgs(path, fs.constants.F_OK)
+                .rejects(new Error('File does not exist'));
+
+            //-- When
+            const r = await fsHelper.exists(path);
+
+            //-- Then
+            expect(r).to.be.false;
         });
     });
 });
