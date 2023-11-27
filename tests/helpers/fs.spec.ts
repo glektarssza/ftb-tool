@@ -1,9 +1,9 @@
 import chai, {expect} from 'chai';
-import {SinonStub, stub} from 'sinon';
+import {SinonStub, SinonStubbedInstance, createStubInstance, stub} from 'sinon';
 import sinonChai from 'sinon-chai';
 import {en, en_US, base, Faker} from '@faker-js/faker';
-import {Stats} from 'node:fs';
-import fs from 'node:fs/promises';
+import {ReadStream, Stats} from 'node:fs';
+import fs, {CreateReadStreamOptions, FileHandle} from 'node:fs/promises';
 import fsHelper from '@src/helpers/fs';
 
 chai.use(sinonChai);
@@ -627,8 +627,273 @@ describe('module:helpers.fs', () => {
             expect(r).to.be.false;
         });
     });
-    describe('.isReadable', () => {});
-    describe('.createReadableStream', () => {});
+    describe('.isReadable', () => {
+        let isBlockDeviceStub: SinonStub<
+            Parameters<typeof fsHelper.isBlockDevice>,
+            ReturnType<typeof fsHelper.isBlockDevice>
+        >;
+        let isCharacterDeviceStub: SinonStub<
+            Parameters<typeof fsHelper.isCharacterDevice>,
+            ReturnType<typeof fsHelper.isCharacterDevice>
+        >;
+        let isFileStub: SinonStub<
+            Parameters<typeof fsHelper.isFile>,
+            ReturnType<typeof fsHelper.isFile>
+        >;
+        let isSocketStub: SinonStub<
+            Parameters<typeof fsHelper.isSocket>,
+            ReturnType<typeof fsHelper.isSocket>
+        >;
+        before(() => {
+            isBlockDeviceStub = stub(fsHelper, 'isBlockDevice');
+            isCharacterDeviceStub = stub(fsHelper, 'isCharacterDevice');
+            isFileStub = stub(fsHelper, 'isFile');
+            isSocketStub = stub(fsHelper, 'isSocket');
+        });
+        beforeEach(() => {
+            isBlockDeviceStub.reset();
+            isCharacterDeviceStub.reset();
+            isFileStub.reset();
+            isSocketStub.reset();
+
+            isBlockDeviceStub.callThrough();
+            isCharacterDeviceStub.callThrough();
+            isFileStub.callThrough();
+            isSocketStub.callThrough();
+        });
+        after(() => {
+            isBlockDeviceStub.restore();
+            isCharacterDeviceStub.restore();
+            isFileStub.restore();
+            isSocketStub.restore();
+        });
+        it('should return `true` if the path is a block device', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isBlockDeviceStub.withArgs(path).resolves(true);
+            isCharacterDeviceStub.withArgs(path).resolves(false);
+            isFileStub.withArgs(path).resolves(false);
+            isSocketStub.withArgs(path).resolves(false);
+
+            //-- When
+            const r = await fsHelper.isReadable(path);
+
+            //-- Then
+            expect(r).to.be.true;
+        });
+        it('should return `true` if the path is a character device', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isBlockDeviceStub.withArgs(path).resolves(false);
+            isCharacterDeviceStub.withArgs(path).resolves(true);
+            isFileStub.withArgs(path).resolves(false);
+            isSocketStub.withArgs(path).resolves(false);
+
+            //-- When
+            const r = await fsHelper.isReadable(path);
+
+            //-- Then
+            expect(r).to.be.true;
+        });
+        it('should return `true` if the path is a file', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isBlockDeviceStub.withArgs(path).resolves(false);
+            isCharacterDeviceStub.withArgs(path).resolves(false);
+            isFileStub.withArgs(path).resolves(true);
+            isSocketStub.withArgs(path).resolves(false);
+
+            //-- When
+            const r = await fsHelper.isReadable(path);
+
+            //-- Then
+            expect(r).to.be.true;
+        });
+        it('should return `true` if the path is a socket', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isBlockDeviceStub.withArgs(path).resolves(false);
+            isCharacterDeviceStub.withArgs(path).resolves(false);
+            isFileStub.withArgs(path).resolves(false);
+            isSocketStub.withArgs(path).resolves(true);
+
+            //-- When
+            const r = await fsHelper.isReadable(path);
+
+            //-- Then
+            expect(r).to.be.true;
+        });
+        it('should return `false` if the path is not a character/block device, a file, or a socket', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isBlockDeviceStub.withArgs(path).resolves(false);
+            isCharacterDeviceStub.withArgs(path).resolves(false);
+            isFileStub.withArgs(path).resolves(false);
+            isSocketStub.withArgs(path).resolves(false);
+
+            //-- When
+            const r = await fsHelper.isReadable(path);
+
+            //-- Then
+            expect(r).to.be.false;
+        });
+    });
+    describe('.createReadableStream', () => {
+        let isReadableStub: SinonStub<
+            Parameters<typeof fsHelper.isReadable>,
+            ReturnType<typeof fsHelper.isReadable>
+        >;
+        let openStub: SinonStub<
+            Parameters<typeof fs.open>,
+            ReturnType<typeof fs.open>
+        >;
+        let createReadStreamStub: SinonStub<
+            Parameters<FileHandle['createReadStream']>,
+            ReturnType<FileHandle['createReadStream']>
+        >;
+        let fdStub: SinonStubbedInstance<FileHandle>;
+        const readStreamStub = createStubInstance(ReadStream);
+        before(() => {
+            isReadableStub = stub(fsHelper, 'isReadable');
+            openStub = stub(fs, 'open');
+            createReadStreamStub = stub();
+            fdStub = {
+                createReadStream: createReadStreamStub
+            } as SinonStubbedInstance<FileHandle>;
+        });
+        beforeEach(() => {
+            isReadableStub.reset();
+            openStub.reset();
+            createReadStreamStub.reset();
+
+            isReadableStub.callThrough();
+            openStub.callThrough();
+            createReadStreamStub.resolves(readStreamStub);
+        });
+        after(() => {
+            isReadableStub.restore();
+            openStub.restore();
+        });
+        it('should call `fs.open` with the given path and the `r` option', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isReadableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'r').resolves(fdStub);
+
+            //-- When
+            await fsHelper.createReadableStream(path);
+
+            expect(openStub).to.have.been.calledOnceWith(path, 'r');
+        });
+        it('should call `createReadStream` on the resulting file descriptor', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isReadableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'r').resolves(fdStub);
+
+            //-- When
+            await fsHelper.createReadableStream(path);
+
+            expect(createReadStreamStub).to.have.been.calledOnce;
+        });
+        it('should pass any options provided to `createReadStream`', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const opts: CreateReadStreamOptions = {};
+            isReadableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'r').resolves(fdStub);
+
+            //-- When
+            await fsHelper.createReadableStream(path, opts);
+
+            expect(createReadStreamStub).to.have.been.calledOnceWith(opts);
+        });
+        it('should return a `ReadStream` on success', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const readStream = {} as ReadStream;
+            isReadableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'r').resolves(fdStub);
+            createReadStreamStub.resolves(readStream);
+
+            //-- When
+            const r = await fsHelper.createReadableStream(path);
+
+            //-- Then
+            expect(r).to.equal(readStream);
+        });
+        it('should throw an `Error` if the path is not readable', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const readStream = {} as ReadStream;
+            isReadableStub.withArgs(path).resolves(false);
+            openStub.withArgs(path, 'r').resolves(fdStub);
+            createReadStreamStub.resolves(readStream);
+
+            //-- When
+            try {
+                await fsHelper.createReadableStream(path);
+            } catch (ex) {
+                //-- Then
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`"${path}" is not readable`);
+                return;
+            }
+            //-- Then
+            expect.fail('Function did not throw when it should have');
+        });
+        it('should throw an `Error` if the path cannot be opened', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const readStream = {} as ReadStream;
+            isReadableStub.withArgs(path).resolves(true);
+            openStub
+                .withArgs(path, 'r')
+                .rejects(
+                    new Error(`Failed to open "${path}", permission denied`)
+                );
+            createReadStreamStub.resolves(readStream);
+
+            //-- When
+            try {
+                await fsHelper.createReadableStream(path);
+            } catch (ex) {
+                //-- Then
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`Failed to open "${path}", permission denied`);
+                return;
+            }
+            //-- Then
+            expect.fail('Function did not throw when it should have');
+        });
+        it('should throw an `Error` if the creation of the `ReadStream` fails', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isReadableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'r').resolves(fdStub);
+            createReadStreamStub.rejects(
+                new Error('Failed to create ReadStream, malloc failed')
+            );
+
+            //-- When
+            try {
+                await fsHelper.createReadableStream(path);
+            } catch (ex) {
+                //-- Then
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals('Failed to create ReadStream, malloc failed');
+                return;
+            }
+            //-- Then
+            expect.fail('Function did not throw when it should have');
+        });
+    });
     describe('.createWriteableStream', () => {});
     describe('.checkFileIntegrity', () => {});
     describe('.createTempDirectory', () => {});
