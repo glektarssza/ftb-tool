@@ -144,12 +144,13 @@ const exported = {
      * readable file system item.
      */
     isReadable: async (path: PathLike): Promise<boolean> => {
-        return (
-            (await exported.isBlockDevice(path)) ||
-            (await exported.isCharacterDevice(path)) ||
-            (await exported.isFile(path)) ||
-            (await exported.isSocket(path))
-        );
+        try {
+            await access(path, constants.R_OK);
+            return true;
+        } catch {
+            return false;
+        }
+    },
     },
 
     /**
