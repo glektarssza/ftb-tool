@@ -34,6 +34,7 @@ describe('module:helpers.fs', () => {
         it('should call fs.access with the correct arguments', async () => {
             //-- Given
             const path = fake.system.filePath();
+            accessStub.withArgs(path, fs.constants.F_OK).resolves(undefined);
 
             //-- When
             await fsHelper.exists(path);
