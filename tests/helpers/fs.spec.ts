@@ -683,6 +683,61 @@ describe('module:helpers.fs', () => {
             expect(r).to.be.false;
         });
     });
+    describe('.isWritable', () => {
+        let accessStub: SinonStub<
+            Parameters<typeof fs.access>,
+            ReturnType<typeof fs.access>
+        >;
+        before(() => {
+            accessStub = stub(fs, 'access');
+        });
+        beforeEach(() => {
+            accessStub.reset();
+
+            accessStub.callThrough();
+        });
+        after(() => {
+            accessStub.restore();
+        });
+        it('should call `fs.access` with the correct arguments', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            accessStub.withArgs(path, fs.constants.W_OK).resolves(undefined);
+
+            //-- When
+            await fsHelper.isWritable(path);
+
+            //-- Then
+            expect(accessStub).to.have.been.calledOnceWith(
+                path,
+                fs.constants.W_OK
+            );
+        });
+        it('should return `true` if the path is readable', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            accessStub.withArgs(path, fs.constants.W_OK).resolves(undefined);
+
+            //-- When
+            const r = await fsHelper.isWritable(path);
+
+            //-- Then
+            expect(r).to.be.true;
+        });
+        it('should return `false` if the path is not writable', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            accessStub
+                .withArgs(path, fs.constants.W_OK)
+                .rejects(new Error('File does not exist'));
+
+            //-- When
+            const r = await fsHelper.isWritable(path);
+
+            //-- Then
+            expect(r).to.be.false;
+        });
+    });
     describe('.createReadableStream', () => {
         let isReadableStub: SinonStub<
             Parameters<typeof fsHelper.isReadable>,
@@ -839,7 +894,9 @@ describe('module:helpers.fs', () => {
             expect.fail('Function did not throw when it should have');
         });
     });
-    describe('.createWriteableStream', () => {});
+    describe('.createWriteableStream', () => {
+        it('should ');
+    });
     describe('.checkFileIntegrity', () => {});
     describe('.createTempDirectory', () => {});
     describe('.createOSTempDirectory', () => {});
