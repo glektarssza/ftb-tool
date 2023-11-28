@@ -337,7 +337,11 @@ const exported = {
         if (!(await exported.isFile(source))) {
             throw new Error(`"${source.toString('utf-8')}" is not a file`);
         }
-        if (await exported.exists(destination)) {
+        if (
+            (await exported.exists(destination)) &&
+            !(await exported.isDirectory(destination)) &&
+            !force
+        ) {
             throw new Error(
                 `"${destination.toString('utf-8')}" already exists`
             );
@@ -367,9 +371,17 @@ const exported = {
             throw new Error(`"${source.toString('utf-8')}" is not a directory`);
         }
         if (await exported.exists(destination)) {
-            throw new Error(
-                `"${destination.toString('utf-8')}" already exists`
-            );
+            if (await exported.isFile(destination)) {
+                throw new Error(
+                    `"${destination.toString(
+                        'utf-8'
+                    )}" already exists and is a file`
+                );
+            } else if (!force) {
+                throw new Error(
+                    `"${destination.toString('utf-8')}" already exists`
+                );
+            }
         }
         await cp(source.toString('utf-8'), destination.toString('utf-8'), {
             recursive: true,
