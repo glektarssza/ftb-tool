@@ -1439,8 +1439,704 @@ describe('module:helpers.fs', () => {
             expect(r).to.equal(path.join(osTmpDir, `${prefix}${suffix}`));
         });
     });
-    describe('.removeFile', () => {});
-    describe('.removeDirectory', () => {});
-    describe('.copyFile', () => {});
-    describe('.copyDirectory', () => {});
+    describe('.removeFile', () => {
+        let isFileStub: SinonStub<
+            Parameters<typeof fsHelper.isFile>,
+            ReturnType<typeof fsHelper.isFile>
+        >;
+        let rmStub: SinonStub<
+            Parameters<typeof fs.rm>,
+            ReturnType<typeof fs.rm>
+        >;
+        before(() => {
+            isFileStub = stub(fsHelper, 'isFile');
+            rmStub = stub(fs, 'rm');
+        });
+        beforeEach(() => {
+            isFileStub.reset();
+            rmStub.reset();
+
+            isFileStub.rejects(new Error('Stubbed function'));
+            rmStub.rejects(new Error('Stubbed function'));
+        });
+        after(() => {
+            isFileStub.restore();
+            rmStub.restore();
+        });
+        it('should call `isFile` with the provided path', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isFileStub.withArgs(path).resolves(true);
+            rmStub
+                .withArgs(path, {
+                    recursive: false,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.removeFile(path);
+
+            //-- Then
+            expect(isFileStub).to.have.been.calledOnceWith(path);
+        });
+        it('should call `rm` with the provided path and the `recursive` option set to `false`', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isFileStub.withArgs(path).resolves(true);
+            rmStub
+                .withArgs(path, {
+                    recursive: false,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.removeFile(path);
+
+            //-- Then
+            expect(rmStub).to.have.been.calledOnceWith(path, {
+                recursive: false,
+                force: false
+            });
+        });
+        it('should call `rm` with the provided path and `force` option', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isFileStub.withArgs(path).resolves(true);
+            rmStub
+                .withArgs(path, {
+                    recursive: false,
+                    force: true
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.removeFile(path, true);
+
+            //-- Then
+            expect(rmStub).to.have.been.calledOnceWith(path, {
+                recursive: false,
+                force: true
+            });
+        });
+        it('throw an `Error` if the path is not a file', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isFileStub.withArgs(path).resolves(false);
+            rmStub
+                .withArgs(path, {
+                    recursive: false,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.removeFile(path);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`"${path}" is not a file`);
+                return;
+            }
+
+            //-- Then
+            expect.fail('Function did not throw when it should have');
+        });
+    });
+    describe('.removeDirectory', () => {
+        let isDirectoryStub: SinonStub<
+            Parameters<typeof fsHelper.isDirectory>,
+            ReturnType<typeof fsHelper.isDirectory>
+        >;
+        let rmStub: SinonStub<
+            Parameters<typeof fs.rm>,
+            ReturnType<typeof fs.rm>
+        >;
+        before(() => {
+            isDirectoryStub = stub(fsHelper, 'isDirectory');
+            rmStub = stub(fs, 'rm');
+        });
+        beforeEach(() => {
+            isDirectoryStub.reset();
+            rmStub.reset();
+
+            isDirectoryStub.rejects(new Error('Stubbed function'));
+            rmStub.rejects(new Error('Stubbed function'));
+        });
+        after(() => {
+            isDirectoryStub.restore();
+            rmStub.restore();
+        });
+        it('should call `isDirectory` with the provided path', async () => {
+            //-- Given
+            const path = fake.system.directoryPath();
+            isDirectoryStub.withArgs(path).resolves(true);
+            rmStub
+                .withArgs(path, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.removeDirectory(path);
+
+            //-- Then
+            expect(isDirectoryStub).to.have.been.calledOnceWith(path);
+        });
+        it('should call `rm` with the provided path and the `recursive` option set to `true`', async () => {
+            //-- Given
+            const path = fake.system.directoryPath();
+            isDirectoryStub.withArgs(path).resolves(true);
+            rmStub
+                .withArgs(path, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.removeDirectory(path);
+
+            //-- Then
+            expect(rmStub).to.have.been.calledOnceWith(path, {
+                recursive: true,
+                force: false
+            });
+        });
+        it('should call `rm` with the provided path and `force` option', async () => {
+            //-- Given
+            const path = fake.system.directoryPath();
+            isDirectoryStub.withArgs(path).resolves(true);
+            rmStub
+                .withArgs(path, {
+                    recursive: true,
+                    force: true
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.removeDirectory(path, true);
+
+            //-- Then
+            expect(rmStub).to.have.been.calledOnceWith(path, {
+                recursive: true,
+                force: true
+            });
+        });
+        it('throw an `Error` if the path is not a directory', async () => {
+            //-- Given
+            const path = fake.system.directoryPath();
+            isDirectoryStub.withArgs(path).resolves(false);
+            rmStub
+                .withArgs(path, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.removeDirectory(path);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`"${path}" is not a directory`);
+                return;
+            }
+
+            //-- Then
+            expect.fail('Function did not throw when it should have');
+        });
+    });
+    describe('.copyFile', () => {
+        let isFileStub: SinonStub<
+            Parameters<typeof fsHelper.isFile>,
+            ReturnType<typeof fsHelper.isFile>
+        >;
+        let existsStub: SinonStub<
+            Parameters<typeof fsHelper.exists>,
+            ReturnType<typeof fsHelper.exists>
+        >;
+        let isDirectoryStub: SinonStub<
+            Parameters<typeof fsHelper.isDirectory>,
+            ReturnType<typeof fsHelper.isDirectory>
+        >;
+        let cpStub: SinonStub<
+            Parameters<typeof fs.cp>,
+            ReturnType<typeof fs.cp>
+        >;
+        before(() => {
+            isFileStub = stub(fsHelper, 'isFile');
+            existsStub = stub(fsHelper, 'exists');
+            isDirectoryStub = stub(fsHelper, 'isDirectory');
+            cpStub = stub(fs, 'cp');
+        });
+        beforeEach(() => {
+            isFileStub.reset();
+            existsStub.reset();
+            isDirectoryStub.reset();
+            cpStub.reset();
+
+            isFileStub.rejects(new Error('Stubbed function'));
+            existsStub.rejects(new Error('Stubbed function'));
+            isDirectoryStub.rejects(new Error('Stubbed function'));
+            cpStub.rejects(new Error('Stubbed function'));
+        });
+        after(() => {
+            isFileStub.restore();
+            existsStub.restore();
+            isDirectoryStub.restore();
+            cpStub.restore();
+        });
+        it('should call `isFile` with the provided source path', async () => {
+            //-- Given
+            const source = fake.system.filePath();
+            const destination = fake.system.directoryPath();
+            isFileStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(true);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: false,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.copyFile(source, destination);
+
+            //-- Then
+            expect(isFileStub).to.have.been.calledOnceWith(source);
+        });
+        it('should call `exists` with the provided destination path', async () => {
+            //-- Given
+            const source = fake.system.filePath();
+            const destination = fake.system.directoryPath();
+            isFileStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(true);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: false,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.copyFile(source, destination);
+
+            //-- Then
+            expect(existsStub).to.have.been.calledOnceWith(destination);
+        });
+        it('should call `isDirectory` with the provided destination path if the destination path exists', async () => {
+            //-- Given
+            const source = fake.system.filePath();
+            const destination = fake.system.directoryPath();
+            isFileStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(true);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: false,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.copyFile(source, destination);
+
+            //-- Then
+            expect(isDirectoryStub).to.have.been.calledOnceWith(destination);
+        });
+        it('should call `cp` with the provided source path, destination path, and the `recursive` option set to `false`', async () => {
+            //-- Given
+            const source = fake.system.filePath();
+            const destination = fake.system.directoryPath();
+            isFileStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(true);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: false,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.copyFile(source, destination);
+
+            //-- Then
+            expect(cpStub).to.have.been.calledOnceWith(source, destination, {
+                recursive: false,
+                force: false
+            });
+        });
+        it('should call `cp` with the provided source path, destination path, and `force` option', async () => {
+            //-- Given
+            const source = fake.system.filePath();
+            const destination = fake.system.directoryPath();
+            isFileStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(true);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: false,
+                    force: true
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.copyFile(source, destination, true);
+
+            //-- Then
+            expect(cpStub).to.have.been.calledOnceWith(source, destination, {
+                recursive: false,
+                force: true
+            });
+        });
+        it('should throw an `Error` if the source path is not a file', async () => {
+            //-- Given
+            const source = fake.system.filePath();
+            const destination = fake.system.directoryPath();
+            isFileStub.withArgs(source).resolves(false);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(true);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: false,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.copyFile(source, destination);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`"${source}" is not a file`);
+                return;
+            }
+
+            expect.fail('Function did not throw when it should have');
+        });
+        it('throw an `Error` if the destination path exists, is a file, and the `force` flag is `false`', async () => {
+            //-- Given
+            const source = fake.system.filePath();
+            const destination = fake.system.directoryPath();
+            isFileStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: false,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.copyFile(source, destination);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`"${destination}" already exists`);
+                return;
+            }
+
+            expect.fail('Function did not throw when it should have');
+        });
+        it('should not throw an `Error` if the destination path exists, is a file, and the `force` flag is `true`', async () => {
+            //-- Given
+            const source = fake.system.filePath();
+            const destination = fake.system.directoryPath();
+            isFileStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: false,
+                    force: true
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.copyFile(source, destination, true);
+            } catch {
+                expect.fail('Function threw when it should not have');
+            }
+        });
+    });
+    describe('.copyDirectory', () => {
+        let isFileStub: SinonStub<
+            Parameters<typeof fsHelper.isFile>,
+            ReturnType<typeof fsHelper.isFile>
+        >;
+        let existsStub: SinonStub<
+            Parameters<typeof fsHelper.exists>,
+            ReturnType<typeof fsHelper.exists>
+        >;
+        let isDirectoryStub: SinonStub<
+            Parameters<typeof fsHelper.isDirectory>,
+            ReturnType<typeof fsHelper.isDirectory>
+        >;
+        let cpStub: SinonStub<
+            Parameters<typeof fs.cp>,
+            ReturnType<typeof fs.cp>
+        >;
+        before(() => {
+            isFileStub = stub(fsHelper, 'isFile');
+            existsStub = stub(fsHelper, 'exists');
+            isDirectoryStub = stub(fsHelper, 'isDirectory');
+            cpStub = stub(fs, 'cp');
+        });
+        beforeEach(() => {
+            isFileStub.reset();
+            existsStub.reset();
+            isDirectoryStub.reset();
+            cpStub.reset();
+
+            isFileStub.rejects(new Error('Stubbed function'));
+            existsStub.rejects(new Error('Stubbed function'));
+            isDirectoryStub.rejects(new Error('Stubbed function'));
+            cpStub.rejects(new Error('Stubbed function'));
+        });
+        after(() => {
+            isFileStub.restore();
+            existsStub.restore();
+            isDirectoryStub.restore();
+            cpStub.restore();
+        });
+        it('should call `isDirectory` with the provided source path', async () => {
+            //-- Given
+            const source = fake.system.directoryPath();
+            const destination = fake.system.directoryPath();
+            isDirectoryStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(false);
+            isDirectoryStub.withArgs(destination).resolves(false);
+            isFileStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.copyDirectory(source, destination);
+
+            //-- Then
+            expect(isDirectoryStub).to.have.been.calledOnceWith(source);
+        });
+        it('should call `exists` with the provided destination path', async () => {
+            //-- Given
+            const source = fake.system.directoryPath();
+            const destination = fake.system.directoryPath();
+            isDirectoryStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(false);
+            isDirectoryStub.withArgs(destination).resolves(false);
+            isFileStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.copyDirectory(source, destination);
+
+            //-- Then
+            expect(existsStub).to.have.been.calledOnceWith(destination);
+        });
+        it('should call `isFile` with the provided destination path if the destination path exists', async () => {
+            //-- Given
+            const source = fake.system.directoryPath();
+            const destination = fake.system.directoryPath();
+            isDirectoryStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(false);
+            isFileStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.copyDirectory(source, destination);
+            } catch {
+                //-- Silence error
+            }
+
+            //-- Then
+            expect(isFileStub).to.have.been.calledOnceWith(destination);
+        });
+        it('should call `cp` with the provided source path, destination path, and the `recursive` option set to `true`', async () => {
+            //-- Given
+            const source = fake.system.directoryPath();
+            const destination = fake.system.directoryPath();
+            isDirectoryStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(false);
+            isDirectoryStub.withArgs(destination).resolves(false);
+            isFileStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.copyDirectory(source, destination);
+
+            //-- Then
+            expect(cpStub).to.have.been.calledOnceWith(source, destination, {
+                recursive: true,
+                force: false
+            });
+        });
+        it('should call `cp` with the provided source path, destination path, and `force` option', async () => {
+            //-- Given
+            const source = fake.system.directoryPath();
+            const destination = fake.system.directoryPath();
+            isDirectoryStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(false);
+            isDirectoryStub.withArgs(destination).resolves(false);
+            isFileStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: true,
+                    force: true
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.copyDirectory(source, destination, true);
+
+            //-- Then
+            expect(cpStub).to.have.been.calledOnceWith(source, destination, {
+                recursive: true,
+                force: true
+            });
+        });
+        it('should throw an `Error` if the source path is not a directory', async () => {
+            //-- Given
+            const source = fake.system.directoryPath();
+            const destination = fake.system.directoryPath();
+            isDirectoryStub.withArgs(source).resolves(false);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(false);
+            isFileStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.copyDirectory(source, destination);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`"${source}" is not a directory`);
+                return;
+            }
+
+            expect.fail('Function did not throw when it should have');
+        });
+        it('throw an `Error` if the destination path exists and is a file', async () => {
+            //-- Given
+            const source = fake.system.directoryPath();
+            const destination = fake.system.directoryPath();
+            isDirectoryStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(false);
+            isFileStub.withArgs(destination).resolves(true);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.copyDirectory(source, destination);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(
+                        `"${destination}" already exists and is a file`
+                    );
+                return;
+            }
+
+            expect.fail('Function did not throw when it should have');
+        });
+        it('throw an `Error` if the destination path exists, is a directory, and the `force` flag is `false`', async () => {
+            //-- Given
+            const source = fake.system.directoryPath();
+            const destination = fake.system.directoryPath();
+            isDirectoryStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(true);
+            isFileStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: true,
+                    force: false
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.copyDirectory(source, destination);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`"${destination}" already exists`);
+                return;
+            }
+
+            expect.fail('Function did not throw when it should have');
+        });
+        it('should not throw an `Error` if the destination path exists, is a directory, and the `force` flag is `true`', async () => {
+            //-- Given
+            const source = fake.system.directoryPath();
+            const destination = fake.system.directoryPath();
+            isDirectoryStub.withArgs(source).resolves(true);
+            existsStub.withArgs(destination).resolves(true);
+            isDirectoryStub.withArgs(destination).resolves(true);
+            isFileStub.withArgs(destination).resolves(false);
+            cpStub
+                .withArgs(source, destination, {
+                    recursive: true,
+                    force: true
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.copyDirectory(source, destination, true);
+            } catch {
+                expect.fail('Function threw when it should not have');
+            }
+        });
+    });
 });
