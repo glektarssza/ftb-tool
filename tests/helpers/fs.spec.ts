@@ -2,7 +2,7 @@ import chai, {expect} from 'chai';
 import {SinonStub, SinonStubbedInstance, createStubInstance, stub} from 'sinon';
 import sinonChai from 'sinon-chai';
 import {en, en_US, base, Faker} from '@faker-js/faker';
-import {ReadStream, Stats} from 'node:fs';
+import {ReadStream, Stats, WriteStream} from 'node:fs';
 import fs, {CreateReadStreamOptions, FileHandle} from 'node:fs/promises';
 import fsHelper from '@src/helpers/fs';
 
@@ -811,24 +811,21 @@ describe('module:helpers.fs', () => {
         it('should return a `ReadStream` on success', async () => {
             //-- Given
             const path = fake.system.filePath();
-            const readStream = {} as ReadStream;
             isReadableStub.withArgs(path).resolves(true);
             openStub.withArgs(path, 'r').resolves(fdStub);
-            createReadStreamStub.resolves(readStream);
+            createReadStreamStub.resolves(readStreamStub);
 
             //-- When
             const r = await fsHelper.createReadableStream(path);
 
             //-- Then
-            expect(r).to.equal(readStream);
+            expect(r).to.equal(readStreamStub);
         });
         it('should throw an `Error` if the path is not readable', async () => {
             //-- Given
             const path = fake.system.filePath();
-            const readStream = {} as ReadStream;
             isReadableStub.withArgs(path).resolves(false);
             openStub.withArgs(path, 'r').resolves(fdStub);
-            createReadStreamStub.resolves(readStream);
 
             //-- When
             try {
@@ -847,14 +844,12 @@ describe('module:helpers.fs', () => {
         it('should throw an `Error` if the path cannot be opened', async () => {
             //-- Given
             const path = fake.system.filePath();
-            const readStream = {} as ReadStream;
             isReadableStub.withArgs(path).resolves(true);
             openStub
                 .withArgs(path, 'r')
                 .rejects(
                     new Error(`Failed to open "${path}", permission denied`)
                 );
-            createReadStreamStub.resolves(readStream);
 
             //-- When
             try {
@@ -895,7 +890,155 @@ describe('module:helpers.fs', () => {
         });
     });
     describe('.createWriteableStream', () => {
-        it('should ');
+        let isWritableStub: SinonStub<
+            Parameters<typeof fsHelper.isWritable>,
+            ReturnType<typeof fsHelper.isWritable>
+        >;
+        let openStub: SinonStub<
+            Parameters<typeof fs.open>,
+            ReturnType<typeof fs.open>
+        >;
+        let createWriteStreamStub: SinonStub<
+            Parameters<FileHandle['createWriteStream']>,
+            ReturnType<FileHandle['createWriteStream']>
+        >;
+        let fdStub: SinonStubbedInstance<FileHandle>;
+        const writeStreamStub = createStubInstance(WriteStream);
+        before(() => {
+            isWritableStub = stub(fsHelper, 'isWritable');
+            openStub = stub(fs, 'open');
+            createWriteStreamStub = stub();
+            fdStub = {
+                createWriteStream: createWriteStreamStub
+            } as SinonStubbedInstance<FileHandle>;
+        });
+        beforeEach(() => {
+            isWritableStub.reset();
+            openStub.reset();
+            createWriteStreamStub.reset();
+
+            isWritableStub.callThrough();
+            openStub.callThrough();
+            createWriteStreamStub.resolves(writeStreamStub);
+        });
+        after(() => {
+            isWritableStub.restore();
+            openStub.restore();
+        });
+        it('should call `fs.open` with the given path and the `w` option', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isWritableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'w').resolves(fdStub);
+
+            //-- When
+            await fsHelper.createWritableStream(path);
+
+            expect(openStub).to.have.been.calledOnceWith(path, 'w');
+        });
+        it('should call `createWriteStream` on the resulting file descriptor', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isWritableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'w').resolves(fdStub);
+
+            //-- When
+            await fsHelper.createWritableStream(path);
+
+            expect(createWriteStreamStub).to.have.been.calledOnce;
+        });
+        it('should pass any options provided to `createWriteStream`', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const opts: CreateReadStreamOptions = {};
+            isWritableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'w').resolves(fdStub);
+
+            //-- When
+            await fsHelper.createWritableStream(path, opts);
+
+            expect(createWriteStreamStub).to.have.been.calledOnceWith(opts);
+        });
+        it('should return a `WriteStream` on success', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isWritableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'w').resolves(fdStub);
+            createWriteStreamStub.resolves(writeStreamStub);
+
+            //-- When
+            const r = await fsHelper.createWritableStream(path);
+
+            //-- Then
+            expect(r).to.equal(writeStreamStub);
+        });
+        it('should throw an `Error` if the path is not writable', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isWritableStub.withArgs(path).resolves(false);
+            openStub.withArgs(path, 'w').resolves(fdStub);
+
+            //-- When
+            try {
+                await fsHelper.createWritableStream(path);
+            } catch (ex) {
+                //-- Then
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`"${path}" is not writable`);
+                return;
+            }
+            //-- Then
+            expect.fail('Function did not throw when it should have');
+        });
+        it('should throw an `Error` if the path cannot be opened', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isWritableStub.withArgs(path).resolves(true);
+            openStub
+                .withArgs(path, 'w')
+                .rejects(
+                    new Error(`Failed to open "${path}", permission denied`)
+                );
+
+            //-- When
+            try {
+                await fsHelper.createWritableStream(path);
+            } catch (ex) {
+                //-- Then
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`Failed to open "${path}", permission denied`);
+                return;
+            }
+            //-- Then
+            expect.fail('Function did not throw when it should have');
+        });
+        it('should throw an `Error` if the creation of the `WriteStream` fails', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            isWritableStub.withArgs(path).resolves(true);
+            openStub.withArgs(path, 'w').resolves(fdStub);
+            createWriteStreamStub.rejects(
+                new Error('Failed to create WriteStream, malloc failed')
+            );
+
+            //-- When
+            try {
+                await fsHelper.createWritableStream(path);
+            } catch (ex) {
+                //-- Then
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals('Failed to create WriteStream, malloc failed');
+                return;
+            }
+            //-- Then
+            expect.fail('Function did not throw when it should have');
+        });
     });
     describe('.checkFileIntegrity', () => {});
     describe('.createTempDirectory', () => {});
