@@ -2,6 +2,7 @@ import chai, {expect} from 'chai';
 import {SinonStub, SinonStubbedInstance, createStubInstance, stub} from 'sinon';
 import sinonChai from 'sinon-chai';
 import {en, en_US, base, Faker} from '@faker-js/faker';
+import crypto, {Hash} from 'node:crypto';
 import {ReadStream, Stats, WriteStream} from 'node:fs';
 import fs, {CreateReadStreamOptions, FileHandle} from 'node:fs/promises';
 import fsHelper from '@src/helpers/fs';
@@ -1040,7 +1041,180 @@ describe('module:helpers.fs', () => {
             expect.fail('Function did not throw when it should have');
         });
     });
-    describe('.checkFileIntegrity', () => {});
+    describe('.checkFileIntegrity', () => {
+        let isFileStub: SinonStub<
+            Parameters<typeof fsHelper.isFile>,
+            ReturnType<typeof fsHelper.isFile>
+        >;
+        let createReadableStreamStub: SinonStub<
+            Parameters<typeof fsHelper.createReadableStream>,
+            ReturnType<typeof fsHelper.createReadableStream>
+        >;
+        let createHashStub: SinonStub<
+            Parameters<typeof crypto.createHash>,
+            ReturnType<typeof crypto.createHash>
+        >;
+        let digestStub: SinonStub<
+            Parameters<Hash['digest']>,
+            ReturnType<Hash['digest']>
+        >;
+        let pipeStub: SinonStub<
+            Parameters<ReadStream['pipe']>,
+            ReturnType<ReadStream['pipe']>
+        >;
+        let closeStub: SinonStub<
+            Parameters<ReadStream['close']>,
+            ReturnType<ReadStream['close']>
+        >;
+        let readStreamStub: SinonStubbedInstance<ReadStream>;
+        let hashStub: SinonStubbedInstance<Hash>;
+        before(() => {
+            isFileStub = stub(fsHelper, 'isFile');
+            createReadableStreamStub = stub(fsHelper, 'createReadableStream');
+            createHashStub = stub(crypto, 'createHash');
+            digestStub = stub();
+            pipeStub = stub();
+            closeStub = stub();
+            readStreamStub = {
+                pipe: pipeStub,
+                close: closeStub
+            } as SinonStubbedInstance<ReadStream>;
+            hashStub = {
+                digest: digestStub
+            } as SinonStubbedInstance<Hash>;
+        });
+        beforeEach(() => {
+            isFileStub.reset();
+            createReadableStreamStub.reset();
+            createHashStub.reset();
+            digestStub.reset();
+            pipeStub.reset();
+            closeStub.reset();
+
+            isFileStub.resolves(false);
+            createReadableStreamStub.resolves(readStreamStub);
+            createHashStub.returns(hashStub);
+            digestStub.returns(
+                fake.string.hexadecimal({
+                    length: 32
+                })
+            );
+        });
+        after(() => {
+            isFileStub.restore();
+            createReadableStreamStub.restore();
+        });
+        it('should pipe the `ReadStream` to the `Hash`', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const hash = fake.string.hexadecimal({
+                length: 32
+            });
+            isFileStub.withArgs(path).resolves(true);
+            createReadableStreamStub.withArgs(path).resolves(readStreamStub);
+            digestStub.returns(hash);
+
+            //-- When
+            await fsHelper.checkFileIntegrity(path, hash);
+
+            //-- Then
+            expect(pipeStub).to.have.been.calledOnceWithExactly(hashStub);
+        });
+        it('should close the `ReadStream` after getting the hash', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const hash = fake.string.hexadecimal({
+                length: 32
+            });
+            isFileStub.withArgs(path).resolves(true);
+            createReadableStreamStub.withArgs(path).resolves(readStreamStub);
+            digestStub.returns(hash);
+
+            //-- When
+            await fsHelper.checkFileIntegrity(path, hash);
+
+            //-- Then
+            expect(closeStub).to.have.been.calledOnceWithExactly();
+            expect(closeStub).to.have.been.calledImmediatelyAfter(digestStub);
+        });
+        it('should return `true` if the path exists and has contents matching the integrity hash', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const hash = fake.string.hexadecimal({
+                length: 32
+            });
+            isFileStub.withArgs(path).resolves(true);
+            createReadableStreamStub.withArgs(path).resolves(readStreamStub);
+            digestStub.returns(hash);
+
+            //-- When
+            const r = await fsHelper.checkFileIntegrity(path, hash);
+
+            //-- Then
+            expect(r).to.be.true;
+        });
+        it('should return `false` if the path exists and has contents not matching the integrity hash', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const hash = fake.string.hexadecimal({
+                length: 32
+            });
+            const actualHash = fake.string.hexadecimal({
+                length: 32
+            });
+            isFileStub.withArgs(path).resolves(true);
+            createReadableStreamStub.withArgs(path).resolves(readStreamStub);
+            digestStub.returns(actualHash);
+
+            //-- When
+            const r = await fsHelper.checkFileIntegrity(path, hash);
+
+            //-- Then
+            expect(r).to.be.false;
+        });
+        it('should return `false` if the path is not a file', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const hash = fake.string.hexadecimal({
+                length: 32
+            });
+            isFileStub.withArgs(path).resolves(false);
+
+            //-- When
+            const r = await fsHelper.checkFileIntegrity(path, hash);
+
+            //-- Then
+            expect(r).to.be.false;
+        });
+        it('should throw an `Error` if a `ReadStream` cannot be created', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const hash = fake.string.hexadecimal({
+                length: 32
+            });
+            isFileStub.withArgs(path).resolves(true);
+            createReadableStreamStub
+                .withArgs(path)
+                .rejects(
+                    new Error(`Failed to open "${path}", permission denied`)
+                );
+            digestStub.returns(hash);
+
+            //-- When
+            try {
+                await fsHelper.checkFileIntegrity(path, hash);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`Failed to open "${path}", permission denied`);
+                return;
+            }
+
+            //-- Then
+            expect.fail('Function did not throw when it should have');
+        });
+    });
     describe('.createTempDirectory', () => {});
     describe('.createOSTempDirectory', () => {});
     describe('.removeFile', () => {});
