@@ -28,10 +28,11 @@ const fake = new Faker({
 
 describe('module:helpers.fs', () => {
     before(() => {
-        const currentSeed = fake.seed(
-            parseOptionalEnvInteger('TESTS_FAKER_SEED') ?? undefined
+        console.debug(
+            `Using "${fake.seed(
+                parseOptionalEnvInteger('TESTS_FAKER_SEED') ?? undefined
+            )}"`
         );
-        console.debug(`Using "${currentSeed}" as mock data seed`);
     });
     describe('.exists', () => {
         let accessStub: SinonStub<
