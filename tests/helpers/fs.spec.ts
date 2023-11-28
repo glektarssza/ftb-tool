@@ -1,13 +1,21 @@
-import chai, {expect} from 'chai';
-import {SinonStub, SinonStubbedInstance, createStubInstance, stub} from 'sinon';
-import sinonChai from 'sinon-chai';
-import {en, en_US, base, Faker} from '@faker-js/faker';
+//-- NodeJS
 import crypto, {Hash} from 'node:crypto';
 import {ReadStream, Stats, WriteStream} from 'node:fs';
 import fs, {CreateReadStreamOptions, FileHandle} from 'node:fs/promises';
 import os from 'node:os';
-import fsHelper from '@src/helpers/fs';
 import path from 'node:path';
+
+//-- NPM Packages
+import chai, {expect} from 'chai';
+import {SinonStub, SinonStubbedInstance, createStubInstance, stub} from 'sinon';
+import sinonChai from 'sinon-chai';
+import {en, en_US, base, Faker} from '@faker-js/faker';
+
+//-- Project Code
+import fsHelper from '@src/helpers/fs';
+
+//-- Test Utils
+import {parseOptionalEnvInteger} from '../utils';
 
 chai.use(sinonChai);
 
@@ -19,6 +27,12 @@ const fake = new Faker({
 });
 
 describe('module:helpers.fs', () => {
+    before(() => {
+        const currentSeed = fake.seed(
+            parseOptionalEnvInteger('TESTS_FAKER_SEED') ?? undefined
+        );
+        console.debug(`Using "${currentSeed}" as mock data seed`);
+    });
     describe('.exists', () => {
         let accessStub: SinonStub<
             Parameters<typeof fs.access>,
