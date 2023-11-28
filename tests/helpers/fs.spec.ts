@@ -5,7 +5,9 @@ import {en, en_US, base, Faker} from '@faker-js/faker';
 import crypto, {Hash} from 'node:crypto';
 import {ReadStream, Stats, WriteStream} from 'node:fs';
 import fs, {CreateReadStreamOptions, FileHandle} from 'node:fs/promises';
+import os from 'node:os';
 import fsHelper from '@src/helpers/fs';
+import path from 'node:path';
 
 chai.use(sinonChai);
 
@@ -1215,8 +1217,228 @@ describe('module:helpers.fs', () => {
             expect.fail('Function did not throw when it should have');
         });
     });
-    describe('.createTempDirectory', () => {});
-    describe('.createOSTempDirectory', () => {});
+    describe('.createTempDirectory', () => {
+        let mkdtempStub: SinonStub<
+            Parameters<typeof fs.mkdtemp>,
+            ReturnType<typeof fs.mkdtemp>
+        >;
+        let isDirectoryStub: SinonStub<
+            Parameters<typeof fsHelper.isDirectory>,
+            ReturnType<typeof fsHelper.isDirectory>
+        >;
+        before(() => {
+            mkdtempStub = stub(fs, 'mkdtemp');
+            isDirectoryStub = stub(fsHelper, 'isDirectory');
+        });
+        beforeEach(() => {
+            mkdtempStub.reset();
+            isDirectoryStub.reset();
+
+            mkdtempStub.rejects(new Error('Stubbed function'));
+            isDirectoryStub.resolves(false);
+        });
+        after(() => {
+            mkdtempStub.restore();
+            isDirectoryStub.restore();
+        });
+        it('should call `mkdtemp` with the full prefix and `utf-8` as the encoding', async () => {
+            //-- Given
+            const root = fake.system.directoryPath();
+            const prefix = fake.system.fileName({
+                extensionCount: 0
+            });
+            const suffix = fake.string.alphanumeric({
+                length: 6
+            });
+            mkdtempStub
+                .withArgs(path.join(root, prefix), 'utf-8')
+                .resolves(path.join(root, `${prefix}${suffix}`));
+            isDirectoryStub.withArgs(root).resolves(true);
+
+            //-- When
+            await fsHelper.createTempDirectory(root, prefix);
+
+            //-- Then
+            expect(mkdtempStub).to.have.been.calledOnceWith(
+                path.join(root, prefix),
+                'utf-8'
+            );
+        });
+        it('return the path to the new temporary directory', async () => {
+            //-- Given
+            const root = fake.system.directoryPath();
+            const prefix = fake.system.fileName({
+                extensionCount: 0
+            });
+            const suffix = fake.string.alphanumeric({
+                length: 6
+            });
+            mkdtempStub
+                .withArgs(path.join(root, prefix), 'utf-8')
+                .resolves(path.join(root, `${prefix}${suffix}`));
+            isDirectoryStub.withArgs(root).resolves(true);
+
+            //-- When
+            const r = await fsHelper.createTempDirectory(root, prefix);
+
+            //-- Then
+            expect(r).to.equal(path.join(root, `${prefix}${suffix}`));
+        });
+        it('should throw an `Error` if the root is not a directory', async () => {
+            //-- Given
+            const root = fake.system.directoryPath();
+            const prefix = fake.system.fileName({
+                extensionCount: 0
+            });
+            const suffix = fake.string.alphanumeric({
+                length: 6
+            });
+            mkdtempStub
+                .withArgs(path.join(root, prefix), 'utf-8')
+                .resolves(path.join(root, `${prefix}${suffix}`));
+            isDirectoryStub.withArgs(root).resolves(false);
+
+            //-- When
+            try {
+                await fsHelper.createTempDirectory(root, prefix);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(
+                        `Cannot create a temporary directory in "${root}", not a directory`
+                    );
+                return;
+            }
+            expect.fail('Function did not throw when it should have');
+        });
+        it('should throw an `Error` if the temporary directory cannot be created', async () => {
+            //-- Given
+            const root = fake.system.directoryPath();
+            const prefix = fake.system.fileName({
+                extensionCount: 0
+            });
+            const suffix = fake.string.alphanumeric({
+                length: 6
+            });
+            mkdtempStub
+                .withArgs(path.join(root, prefix), 'utf-8')
+                .rejects(
+                    new Error(
+                        `Cannot create directory "${path.join(
+                            root,
+                            `${prefix}${suffix}`
+                        )}", permission denied`
+                    )
+                );
+            isDirectoryStub.withArgs(root).resolves(true);
+
+            //-- When
+            try {
+                await fsHelper.createTempDirectory(root, prefix);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(
+                        `Cannot create directory "${path.join(
+                            root,
+                            `${prefix}${suffix}`
+                        )}", permission denied`
+                    );
+                return;
+            }
+            expect.fail('Function did not throw when it should have');
+        });
+    });
+    describe('.createOSTempDirectory', () => {
+        let tmpdirStub: SinonStub<
+            Parameters<typeof os.tmpdir>,
+            ReturnType<typeof os.tmpdir>
+        >;
+        let createTempDirectoryStub: SinonStub<
+            Parameters<typeof fsHelper.createTempDirectory>,
+            ReturnType<typeof fsHelper.createTempDirectory>
+        >;
+        before(() => {
+            tmpdirStub = stub(os, 'tmpdir');
+            createTempDirectoryStub = stub(fsHelper, 'createTempDirectory');
+        });
+        beforeEach(() => {
+            tmpdirStub.reset();
+            createTempDirectoryStub.reset();
+
+            tmpdirStub.throws(new Error('Stubbed function'));
+            createTempDirectoryStub.rejects(new Error('Stubbed function'));
+        });
+        after(() => {
+            tmpdirStub.restore();
+            createTempDirectoryStub.restore();
+        });
+        it('should call `tmpdir`', async () => {
+            //-- Given
+            const osTmpDir = fake.system.directoryPath();
+            const prefix = fake.system.fileName({
+                extensionCount: 0
+            });
+            const suffix = fake.string.alphanumeric({
+                length: 6
+            });
+            tmpdirStub.returns(osTmpDir);
+            createTempDirectoryStub
+                .withArgs(osTmpDir, prefix)
+                .resolves(path.join(osTmpDir, `${prefix}${suffix}`));
+
+            //-- When
+            await fsHelper.createOSTempDirectory(prefix);
+
+            //-- Then
+            expect(tmpdirStub).to.have.been.calledOnce;
+        });
+        it('should call `createTempDirectory` with the OS temporary directory and the given prefix', async () => {
+            //-- Given
+            const osTmpDir = fake.system.directoryPath();
+            const prefix = fake.system.fileName({
+                extensionCount: 0
+            });
+            const suffix = fake.string.alphanumeric({
+                length: 6
+            });
+            tmpdirStub.returns(osTmpDir);
+            createTempDirectoryStub
+                .withArgs(osTmpDir, prefix)
+                .resolves(path.join(osTmpDir, `${prefix}${suffix}`));
+
+            //-- When
+            await fsHelper.createOSTempDirectory(prefix);
+
+            //-- Then
+            expect(createTempDirectoryStub).to.have.been.calledOnceWith(
+                osTmpDir,
+                prefix
+            );
+        });
+        it('should return the path to the new temporary directory', async () => {
+            //-- Given
+            const osTmpDir = fake.system.directoryPath();
+            const prefix = fake.system.fileName({
+                extensionCount: 0
+            });
+            const suffix = fake.string.alphanumeric({
+                length: 6
+            });
+            tmpdirStub.returns(osTmpDir);
+            createTempDirectoryStub
+                .withArgs(osTmpDir, prefix)
+                .resolves(path.join(osTmpDir, `${prefix}${suffix}`));
+
+            //-- When
+            const r = await fsHelper.createOSTempDirectory(prefix);
+
+            //-- Then
+            expect(r).to.equal(path.join(osTmpDir, `${prefix}${suffix}`));
+        });
+    });
     describe('.removeFile', () => {});
     describe('.removeDirectory', () => {});
     describe('.copyFile', () => {});
