@@ -1975,7 +1975,11 @@ describe('module:helpers.fs', () => {
         it('should call `isFile` with the provided destination path if the destination path exists', async () => {
             //-- Given
             const source = fake.system.directoryPath();
-            const destination = fake.system.directoryPath();
+            let destination = fake.system.directoryPath();
+            // HACK: On the offer chance the call returns the same value twice
+            while (source === destination) {
+                destination = fake.system.directoryPath();
+            }
             isDirectoryStub.withArgs(source).resolves(true);
             existsStub.withArgs(destination).resolves(true);
             isDirectoryStub.withArgs(destination).resolves(false);
