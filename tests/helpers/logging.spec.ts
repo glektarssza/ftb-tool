@@ -3,13 +3,13 @@ import {Writable} from 'node:stream';
 
 //-- NPM Packages
 import chai, {expect} from 'chai';
-import {match, stub, SinonStub, SinonStubbedInstance} from 'sinon';
+import {stub, SinonStub, SinonStubbedInstance} from 'sinon';
 import sinonChai from 'sinon-chai';
 import {en, en_US, base, Faker} from '@faker-js/faker';
 import chalk from 'chalk';
 
 //-- Project Code
-import loggingHelper from '@src/helpers/logging';
+import loggingHelper, {LogLevel} from '@src/helpers/logging';
 
 //-- Test Utils
 import {parseOptionalEnvInteger} from '../utils';
@@ -207,7 +207,14 @@ describe('module:helpers.fs', () => {
             });
         });
         describe('.log', () => {
-            const originalInfoColorFunc = loggingHelper.LogLevelColor['Info'];
+            const originalInfoColorFunc =
+                loggingHelper.LogLevelColor[
+                    loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                ];
+            const originalInfoDescriptor =
+                loggingHelper.LogLevelDescriptor[
+                    loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                ];
             let writeStub: SinonStub<
                 Parameters<Writable['write']>,
                 ReturnType<Writable['write']>
@@ -228,13 +235,23 @@ describe('module:helpers.fs', () => {
                 writeStub.reset();
                 colorStub.reset();
 
-                loggingHelper.LogLevelColor['Info'] = colorStub;
+                loggingHelper.LogLevelColor[
+                    loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                ] = colorStub;
+                loggingHelper.LogLevelDescriptor[
+                    loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                ] = originalInfoDescriptor!;
 
                 writeStub.throws(new Error('Stubbed method'));
                 colorStub.throws(new Error('Stubbed function'));
             });
             after(() => {
-                loggingHelper.LogLevelColor['Info'] = originalInfoColorFunc!;
+                loggingHelper.LogLevelColor[
+                    loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                ] = originalInfoColorFunc!;
+                loggingHelper.LogLevelDescriptor[
+                    loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                ] = originalInfoDescriptor!;
             });
             it('should do nothing if the requested logging level is greater than the configured logging level on the logger', () => {
                 //-- Given
@@ -312,19 +329,298 @@ describe('module:helpers.fs', () => {
                 logger.log(loggingHelper.LogLevel.Info, message);
 
                 //-- Then
-                expect(writeStub).to.have.been.calledWithMatch(message);
+                expect(writeStub).to.have.been.called;
+                expect(writeStub.firstCall.args[0]).to.contain(message);
             });
-            it('should use the provided logging level prefix if one is defined in the `LogLevelDescriptor` table', () => {});
-            it(
-                'not use any logging level prefix if one is not defined in the `LogLevelDescriptor` table'
-            );
+            it('should use the provided logging level prefix if one is defined in the `LogLevelDescriptor` table', () => {
+                //-- Given
+                const name = fake.lorem.word();
+                const message = fake.lorem.sentence();
+                const logger = new loggingHelper.Logger(name, outputStreamStub);
+                colorStub.returns(
+                    `${
+                        loggingHelper.LogLevelDescriptor[
+                            loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                        ]
+                    }`
+                );
+                writeStub.returns(true);
+
+                //-- When
+                logger.log(loggingHelper.LogLevel.Info, message);
+
+                //-- Then
+                expect(writeStub).to.have.been.calledOnce;
+                //-- Specifically match the descriptor at the start of the
+                //-- message
+                expect(writeStub.firstCall.args[0]).to.match(
+                    new RegExp(
+                        `^${loggingHelper.LogLevelDescriptor[
+                            loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                        ]!.replace(/(\]|\[)/, '\\$1')}`
+                    )
+                );
+            });
+            it('not use any logging level prefix if one is not defined in the `LogLevelDescriptor` table', () => {
+                //-- Given
+                const name = fake.lorem.word();
+                const message = fake.lorem.sentence();
+                const logger = new loggingHelper.Logger(name, outputStreamStub);
+                colorStub.returns(
+                    `${
+                        loggingHelper.LogLevelDescriptor[
+                            loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                        ]
+                    }`
+                );
+                writeStub.returns(true);
+                loggingHelper.LogLevelDescriptor[
+                    loggingHelper.LogLevel[loggingHelper.LogLevel.Info]
+                ] = null;
+
+                //-- When
+                logger.log(loggingHelper.LogLevel.Info, message);
+
+                //-- Then
+                expect(colorStub).to.not.have.been.called;
+                expect(writeStub).to.have.been.calledOnce;
+                //-- Specifically match the descriptor at the start of the
+                //-- message
+                expect(writeStub.firstCall.args[0]).to.equal(
+                    `[${name}] ${message}\n`
+                );
+            });
         });
-        describe('.fatal', () => {});
-        describe('.error', () => {});
-        describe('.warn', () => {});
-        describe('.info', () => {});
-        describe('.verbose', () => {});
-        describe('.debug', () => {});
-        describe('.trace', () => {});
+        describe('.fatal', () => {
+            let logStub: SinonStub<
+                Parameters<typeof loggingHelper.Logger.prototype.log>,
+                ReturnType<typeof loggingHelper.Logger.prototype.log>
+            >;
+            before(() => {
+                logStub = stub(loggingHelper.Logger.prototype, 'log');
+            });
+            beforeEach(() => {
+                logStub.reset();
+
+                logStub.throws(new Error('Stubbed method'));
+            });
+            after(() => {
+                logStub.restore();
+            });
+            it('should call `log` with the `Fatal` level and the provided message', () => {
+                //-- Given
+                const name = fake.lorem.word();
+                const message = fake.lorem.sentence();
+                const logger = new loggingHelper.Logger(name);
+                logStub.returns();
+
+                //-- When
+                logger.fatal(message);
+
+                //-- Then
+                expect(logStub).to.have.been.calledOnceWith(
+                    LogLevel.Fatal,
+                    message
+                );
+            });
+        });
+        describe('.error', () => {
+            let logStub: SinonStub<
+                Parameters<typeof loggingHelper.Logger.prototype.log>,
+                ReturnType<typeof loggingHelper.Logger.prototype.log>
+            >;
+            before(() => {
+                logStub = stub(loggingHelper.Logger.prototype, 'log');
+            });
+            beforeEach(() => {
+                logStub.reset();
+
+                logStub.throws(new Error('Stubbed method'));
+            });
+            after(() => {
+                logStub.restore();
+            });
+            it('should call `log` with the `Error` level and the provided message', () => {
+                //-- Given
+                const name = fake.lorem.word();
+                const message = fake.lorem.sentence();
+                const logger = new loggingHelper.Logger(name);
+                logStub.returns();
+
+                //-- When
+                logger.error(message);
+
+                //-- Then
+                expect(logStub).to.have.been.calledOnceWith(
+                    LogLevel.Error,
+                    message
+                );
+            });
+        });
+        describe('.warn', () => {
+            let logStub: SinonStub<
+                Parameters<typeof loggingHelper.Logger.prototype.log>,
+                ReturnType<typeof loggingHelper.Logger.prototype.log>
+            >;
+            before(() => {
+                logStub = stub(loggingHelper.Logger.prototype, 'log');
+            });
+            beforeEach(() => {
+                logStub.reset();
+
+                logStub.throws(new Error('Stubbed method'));
+            });
+            after(() => {
+                logStub.restore();
+            });
+            it('should call `log` with the `Warning` level and the provided message', () => {
+                //-- Given
+                const name = fake.lorem.word();
+                const message = fake.lorem.sentence();
+                const logger = new loggingHelper.Logger(name);
+                logStub.returns();
+
+                //-- When
+                logger.warn(message);
+
+                //-- Then
+                expect(logStub).to.have.been.calledOnceWith(
+                    LogLevel.Warning,
+                    message
+                );
+            });
+        });
+        describe('.info', () => {
+            let logStub: SinonStub<
+                Parameters<typeof loggingHelper.Logger.prototype.log>,
+                ReturnType<typeof loggingHelper.Logger.prototype.log>
+            >;
+            before(() => {
+                logStub = stub(loggingHelper.Logger.prototype, 'log');
+            });
+            beforeEach(() => {
+                logStub.reset();
+
+                logStub.throws(new Error('Stubbed method'));
+            });
+            after(() => {
+                logStub.restore();
+            });
+            it('should call `log` with the `Info` level and the provided message', () => {
+                //-- Given
+                const name = fake.lorem.word();
+                const message = fake.lorem.sentence();
+                const logger = new loggingHelper.Logger(name);
+                logStub.returns();
+
+                //-- When
+                logger.info(message);
+
+                //-- Then
+                expect(logStub).to.have.been.calledOnceWith(
+                    LogLevel.Info,
+                    message
+                );
+            });
+        });
+        describe('.verbose', () => {
+            let logStub: SinonStub<
+                Parameters<typeof loggingHelper.Logger.prototype.log>,
+                ReturnType<typeof loggingHelper.Logger.prototype.log>
+            >;
+            before(() => {
+                logStub = stub(loggingHelper.Logger.prototype, 'log');
+            });
+            beforeEach(() => {
+                logStub.reset();
+
+                logStub.throws(new Error('Stubbed method'));
+            });
+            after(() => {
+                logStub.restore();
+            });
+            it('should call `log` with the `Verbose` level and the provided message', () => {
+                //-- Given
+                const name = fake.lorem.word();
+                const message = fake.lorem.sentence();
+                const logger = new loggingHelper.Logger(name);
+                logStub.returns();
+
+                //-- When
+                logger.verbose(message);
+
+                //-- Then
+                expect(logStub).to.have.been.calledOnceWith(
+                    LogLevel.Verbose,
+                    message
+                );
+            });
+        });
+        describe('.debug', () => {
+            let logStub: SinonStub<
+                Parameters<typeof loggingHelper.Logger.prototype.log>,
+                ReturnType<typeof loggingHelper.Logger.prototype.log>
+            >;
+            before(() => {
+                logStub = stub(loggingHelper.Logger.prototype, 'log');
+            });
+            beforeEach(() => {
+                logStub.reset();
+
+                logStub.throws(new Error('Stubbed method'));
+            });
+            after(() => {
+                logStub.restore();
+            });
+            it('should call `log` with the `Debug` level and the provided message', () => {
+                //-- Given
+                const name = fake.lorem.word();
+                const message = fake.lorem.sentence();
+                const logger = new loggingHelper.Logger(name);
+                logStub.returns();
+
+                //-- When
+                logger.debug(message);
+
+                //-- Then
+                expect(logStub).to.have.been.calledOnceWith(
+                    LogLevel.Debug,
+                    message
+                );
+            });
+        });
+        describe('.trace', () => {
+            let logStub: SinonStub<
+                Parameters<typeof loggingHelper.Logger.prototype.log>,
+                ReturnType<typeof loggingHelper.Logger.prototype.log>
+            >;
+            before(() => {
+                logStub = stub(loggingHelper.Logger.prototype, 'log');
+            });
+            beforeEach(() => {
+                logStub.reset();
+
+                logStub.throws(new Error('Stubbed method'));
+            });
+            after(() => {
+                logStub.restore();
+            });
+            it('should call `log` with the `Trace` level and the provided message', () => {
+                //-- Given
+                const name = fake.lorem.word();
+                const message = fake.lorem.sentence();
+                const logger = new loggingHelper.Logger(name);
+                logStub.returns();
+
+                //-- When
+                logger.trace(message);
+
+                //-- Then
+                expect(logStub).to.have.been.calledOnceWith(
+                    LogLevel.Trace,
+                    message
+                );
+            });
+        });
     });
 });
