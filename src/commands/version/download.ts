@@ -134,6 +134,14 @@ export interface DownloadCLIOptions extends VersionCLIOptions {
      * Defaults to `true`.
      */
     cleanupTemp: boolean;
+
+    /**
+     * Whether to perform the download as a dry-run without actually downloading
+     * anything.
+     *
+     * Defaults to `false`.
+     */
+    dryRun: boolean;
 }
 
 /**
@@ -188,6 +196,12 @@ async function process(args: DownloadCLIOptions): Promise<void> {
         if (await isFile(tempOutputPath)) {
             await removeFile(tempOutputPath);
         }
+        if (args.dryRun) {
+            logger.info(
+                `Would have downloaded "${file.name}" with hash "${file.sha1}" to "${tempOutputPath}"`
+            );
+            return;
+        }
         const os = await createWritableStream(tempOutputPath);
         let is: Readable;
         if (file.curseforge) {
@@ -209,8 +223,21 @@ async function process(args: DownloadCLIOptions): Promise<void> {
     await Promise.all(downloads);
     if (args.archive === ArchiveType.None) {
         logger.info(`Copying "${args.tempPath}" to "${finalDestination}"...`);
+        if (args.dryRun) {
+            logger.info(
+                `Would have copied ${downloads.length} files to "${finalDestination}"`
+            );
+        }
         await copyDirectory(args.tempPath, finalDestination);
     } else {
+        logger.info(
+            `Creating ${args.archive} archive of "${args.tempPath}" at "${finalDestination}"...`
+        );
+        if (args.dryRun) {
+            logger.info(
+                `Would have copied ${downloads.length} files to ${args.archive} archive at "${finalDestination}"`
+            );
+        }
         // TODO: Archive files
     }
 }
@@ -289,6 +316,11 @@ export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
                 description:
                     'Whether to delete the temporary directory after the program runs.',
                 default: true
+            })
+            .option('dryRun', {
+                type: 'boolean',
+                description: 'Whether to perform the download as a dry-run.',
+                default: false
             });
     },
     async handler(args) {
