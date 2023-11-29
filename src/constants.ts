@@ -9,6 +9,11 @@ export const APP_NAME = 'ftb-tool';
 export const APP_VERSION = '0.1.0';
 
 /**
+ * Whether to log verbosely by default.
+ */
+export const DEFAULT_VERBOSE_LOGGING = false;
+
+/**
  * The default user agent to use when making network requests.
  */
 export const DEFAULT_USER_AGENT = `${APP_NAME}/${APP_VERSION} NodeJS/${process.version}`;

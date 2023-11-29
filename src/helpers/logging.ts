@@ -1,9 +1,28 @@
+//-- NodeJS
+import {Writable} from 'node:stream';
+
+//-- NPM Packages
 import chalk from 'chalk';
+
+//-- Project Code
+import {DEFAULT_VERBOSE_LOGGING} from '../constants';
+
+/**
+ * A list of all created loggers.
+ */
+const ALL_LOGGERS: Logger[] = [];
+
+/**
+ * Whether the loggers are operating in verbose mode.
+ *
+ * Used when creating new loggers to set their default logging level.
+ */
+let verbose = DEFAULT_VERBOSE_LOGGING;
 
 /**
  * An enumeration of known logging levels.
  */
-export enum LogLevel {
+enum LogLevel {
     /**
      * No logging.
      */
@@ -53,77 +72,108 @@ export enum LogLevel {
 /**
  * A map of logging levels to a descriptor text for them.
  */
-export const LogLevelDescriptor: Record<string, string> = {
-    None: '',
+const LogLevelDescriptor: Record<string, string | null> = {
+    /**
+     * The descriptor text for the `None` logging level.
+     */
+    None: null,
+
+    /**
+     * The descriptor text for the `Fatal` logging level.
+     */
     Fatal: '[FATAL]',
+
+    /**
+     * The descriptor text for the `Error` logging level.
+     */
     Error: '[ERROR]',
+
+    /**
+     * The descriptor text for the `Warning` logging level.
+     */
     Warning: '[WARN]',
+
+    /**
+     * The descriptor text for the `Info` logging level.
+     */
     Info: '[INFO]',
+
+    /**
+     * The descriptor text for the `Verbose` logging level.
+     */
     Verbose: '[VERBOSE]',
+
+    /**
+     * The descriptor text for the `Debug` logging level.
+     */
     Debug: '[DEBUG]',
+
+    /**
+     * The descriptor text for the `Trace` logging level.
+     */
     Trace: '[TRACE]',
-    All: ''
+
+    /**
+     * The descriptor text for the `All` logging level.
+     */
+    All: null
 };
 
 /**
- * A map of logging levels to the color to use for their descriptor text.
+ * A map of logging levels to the color function to use for their descriptor
+ * text.
  */
-export const LogLevelColor: Record<string, chalk.ChalkFunction> = {
-    None: chalk.reset,
+const LogLevelColor: Record<string, chalk.ChalkFunction | null> = {
+    /**
+     * The color function for the `None` logging level.
+     */
+    None: null,
+
+    /**
+     * The color function for the `Fatal` logging level.
+     */
     Fatal: chalk.bgRed.whiteBright,
+
+    /**
+     * The color function for the `Error` logging level.
+     */
     Error: chalk.red,
+
+    /**
+     * The color function for the `Warning` logging level.
+     */
     Warning: chalk.yellow,
+
+    /**
+     * The color function for the `Info` logging level.
+     */
     Info: chalk.reset,
+
+    /**
+     * The color function for the `Verbose` logging level.
+     */
     Verbose: chalk.magenta,
+
+    /**
+     * The color function for the `Debug` logging level.
+     */
     Debug: chalk.bgBlueBright.whiteBright,
+
+    /**
+     * The color function for the `Trace` logging level.
+     */
     Trace: chalk.cyanBright,
-    All: chalk.reset
+
+    /**
+     * The color function for the `All` logging level.
+     */
+    All: null
 };
-
-/**
- * A list of all created loggers.
- */
-const ALL_LOGGERS: Logger[] = [];
-
-/**
- * Whether the loggers are operating in verbose mode.
- *
- * Used when creating new loggers to set their default logging level.
- */
-let verbose = false;
-
-/**
- * Get whether the loggers are operating in verbose mode.
- *
- * @returns Whether the loggers are operating in verbose mode.
- */
-export function getVerbose(): boolean {
-    return verbose;
-}
-
-/**
- * Set whether the loggers are operating in verbose mode.
- *
- * @param value - The value to set the verbose flag to.
- */
-export function setVerbose(value: boolean) {
-    verbose = value;
-    const level = value ? LogLevel.Verbose : LogLevel.Info;
-    //-- Change all existing loggers over
-    ALL_LOGGERS.forEach((logger) => (logger.level = level));
-}
-
-/**
- * Reset whether the loggers are operating in verbose mode.
- */
-export function resetVerbose() {
-    setVerbose(false);
-}
 
 /**
  * The main logger class.
  */
-export class Logger {
+class Logger {
     /**
      * The name of the logger.
      */
@@ -135,13 +185,23 @@ export class Logger {
     public level: LogLevel;
 
     /**
+     * The stream to write logging output to.
+     *
+     * Defaults to `process.stdout`.
+     */
+    public outputStream: Writable;
+
+    /**
      * Create a new instance.
      *
      * @param name - The name to give the new instance.
+     * @param outputStream - The stream to write logging output from the new
+     * instance to.
      */
-    public constructor(name: string) {
+    public constructor(name: string, outputStream: Writable = process.stdout) {
         this.name = name;
         this.level = verbose ? LogLevel.Verbose : LogLevel.Info;
+        this.outputStream = outputStream;
         ALL_LOGGERS.push(this);
     }
 
@@ -155,12 +215,16 @@ export class Logger {
         if (level > this.level) {
             return;
         }
-        let levelText = LogLevelDescriptor[LogLevel[level]];
-        const colorFunc = LogLevelColor[LogLevel[level]];
-        if (colorFunc) {
+        let levelText = exported.LogLevelDescriptor[exported.LogLevel[level]];
+        const colorFunc = exported.LogLevelColor[exported.LogLevel[level]];
+        if (typeof levelText === 'string' && typeof colorFunc === 'function') {
             levelText = colorFunc(levelText);
         }
-        process.stdout.write(`${levelText} [${this.name}] ${message}\n`);
+        this.outputStream.write(
+            `${typeof levelText === 'string' ? levelText + ' ' : ''}[${
+                this.name
+            }] ${message}\n`
+        );
     }
 
     /**
@@ -226,3 +290,72 @@ export class Logger {
         this.log(LogLevel.Trace, message);
     }
 }
+
+const exported = {
+    /**
+     * An enumeration of known logging levels.
+     */
+    LogLevel,
+
+    /**
+     * A map of logging levels to a descriptor text for them.
+     */
+    LogLevelDescriptor,
+
+    /**
+     * A map of logging levels to the color function to use for their descriptor
+     * text.
+     */
+    LogLevelColor,
+
+    /**
+     * Get whether the loggers are operating in verbose mode.
+     *
+     * @returns Whether the loggers are operating in verbose mode.
+     */
+    getVerbose: (): boolean => {
+        return verbose;
+    },
+
+    /**
+     * Set whether the loggers are operating in verbose mode.
+     *
+     * @param value - The value to set the verbose flag to.
+     */
+    setVerbose: (value: boolean) => {
+        verbose = value;
+        const level = value ? LogLevel.Verbose : LogLevel.Info;
+        //-- Change all existing loggers over
+        ALL_LOGGERS.forEach((logger) => (logger.level = level));
+    },
+
+    /**
+     * Reset whether the loggers are operating in verbose mode.
+     */
+    resetVerbose: () => {
+        exported.setVerbose(DEFAULT_VERBOSE_LOGGING);
+    },
+
+    /**
+     * Get a shallow copy of the list of all loggers.
+     *
+     * @returns A shallow copy of the list of all loggers.
+     */
+    getAllLoggers: (): Logger[] => {
+        return ALL_LOGGERS.slice();
+    },
+
+    /**
+     * Clear the internal list of all loggers.
+     */
+    clearAllLoggers: () => {
+        ALL_LOGGERS.length = 0;
+    },
+
+    /**
+     * The main logger class.
+     */
+    Logger
+};
+
+export = exported;

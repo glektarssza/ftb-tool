@@ -38,7 +38,8 @@ const exported = {
      *
      * @param path - The path to check.
      *
-     * @returns A promise that resolves to whether the path exists and is a file.
+     * @returns A promise that resolves to whether the path exists and is a
+     * file.
      */
     isFile: async (path: PathLike): Promise<boolean> => {
         if (!(await exported.exists(path))) {
@@ -53,7 +54,8 @@ const exported = {
      *
      * @param path - The path to check.
      *
-     * @returns A promise that resolves to whether the path exists and is a directory.
+     * @returns A promise that resolves to whether the path exists and is a
+     * directory.
      */
     isDirectory: async (path: PathLike): Promise<boolean> => {
         if (!(await exported.exists(path))) {
@@ -68,8 +70,8 @@ const exported = {
      *
      * @param path - The path to check.
      *
-     * @returns A promise that resolves to whether the path exists and is a block
-     * device.
+     * @returns A promise that resolves to whether the path exists and is a
+     * block device.
      */
     isBlockDevice: async (path: PathLike): Promise<boolean> => {
         if (!(await exported.exists(path))) {
@@ -100,7 +102,8 @@ const exported = {
      *
      * @param path - The path to check.
      *
-     * @returns A promise that resolves to whether the path exists and is a socket.
+     * @returns A promise that resolves to whether the path exists and is a
+     * socket.
      */
     isSocket: async (path: PathLike): Promise<boolean> => {
         if (!(await exported.exists(path))) {
@@ -115,8 +118,8 @@ const exported = {
      *
      * @param path - The path to check.
      *
-     * @returns A promise that resolves to whether the path exists and is a symbolic
-     * link.
+     * @returns A promise that resolves to whether the path exists and is a
+     * symbolic link.
      */
     isSymbolicLink: async (path: PathLike): Promise<boolean> => {
         if (!(await exported.exists(path))) {
@@ -137,16 +140,39 @@ const exported = {
      *
      * @param path - The path to check.
      *
-     * @returns A promise hat resolves to whether the path exists and is a readable
-     * file system item.
+     * @returns A promise hat resolves to whether the path exists and is a
+     * readable file system item.
      */
     isReadable: async (path: PathLike): Promise<boolean> => {
-        return (
-            (await exported.isBlockDevice(path)) ||
-            (await exported.isCharacterDevice(path)) ||
-            (await exported.isFile(path)) ||
-            (await exported.isSocket(path))
-        );
+        try {
+            await access(path, constants.R_OK);
+            return true;
+        } catch {
+            return false;
+        }
+    },
+
+    /**
+     * Determine if a path exists and is a writable file system item.
+     *
+     * Readable file system items are:
+     * * Files
+     * * Character devices
+     * * Block devices
+     * * Sockets
+     *
+     * @param path - The path to check.
+     *
+     * @returns A promise hat resolves to whether the path exists and is a
+     * writable file system item.
+     */
+    isWritable: async (path: PathLike): Promise<boolean> => {
+        try {
+            await access(path, constants.W_OK);
+            return true;
+        } catch {
+            return false;
+        }
     },
 
     /**
@@ -155,8 +181,8 @@ const exported = {
      * @param path - The path to create a readable stream for.
      * @param opts - Any options to use when creating the stream.
      *
-     * @returns A promise that resolves to a readable stream on success or rejects
-     * if the stream cannot be opened.
+     * @returns A promise that resolves to a readable stream on success or
+     * rejects if the stream cannot be opened.
      */
     createReadableStream: async (
         path: PathLike,
@@ -175,13 +201,16 @@ const exported = {
      * @param path - The path to create a writable stream for.
      * @param opts - Any options to use when creating the stream.
      *
-     * @returns A promise that resolves to a writable stream on success or rejects
-     * if the stream cannot be opened.
+     * @returns A promise that resolves to a writable stream on success or
+     * rejects if the stream cannot be opened.
      */
     createWritableStream: async (
         path: PathLike,
         opts?: CreateWriteStreamOptions
     ): Promise<WriteStream> => {
+        if (!(await exported.isWritable(path))) {
+            throw new Error(`"${path.toString('utf-8')}" is not writable`);
+        }
         const fd = await open(path, 'w');
         return fd.createWriteStream(opts);
     },
@@ -194,8 +223,8 @@ const exported = {
      * @param algo - The hashing algorithm to use.
      *
      * @returns A promise that resolves to `true` if the file exists and has
-     * contents that match the provided hash or resolves to `false` if the file does
-     * not exist or does not match the provided hash.
+     * contents that match the provided hash or resolves to `false` if the file
+     * does not exist or does not match the provided hash.
      */
     checkFileIntegrity: async (
         path: PathLike,
@@ -239,7 +268,7 @@ const exported = {
     },
 
     /**
-     * Create a temporary directory in the temporary file system for the operating
+     * Create a temporary directory in the temporary directory for the operating
      * system.
      *
      * @param prefix - The prefix to apply to the temporary directory.
@@ -258,8 +287,8 @@ const exported = {
      * @param path - The path to the file to remove.
      * @param force - Whether to forcefully remove the file.
      *
-     * @returns A promise that resolves once the operation is completed or rejects
-     * if an error occurs.
+     * @returns A promise that resolves once the operation is completed or
+     * rejects if an error occurs.
      */
     removeFile: async (path: PathLike, force = false): Promise<void> => {
         if (!(await exported.isFile(path))) {
@@ -277,8 +306,8 @@ const exported = {
      * @param path - The path to the directory to remove.
      * @param force - Whether to forcefully remove the directory.
      *
-     * @returns A promise that resolves once the operation is completed or rejects
-     * if an error occurs.
+     * @returns A promise that resolves once the operation is completed or
+     * rejects if an error occurs.
      */
     removeDirectory: async (path: PathLike, force = false): Promise<void> => {
         if (!(await exported.isDirectory(path))) {
@@ -297,8 +326,8 @@ const exported = {
      * @param destination - The location to copy the source to.
      * @param force - Whether to forcefully copy.
      *
-     * @returns A promise that resolves once the operation is completed or rejects
-     * if an error occurs.
+     * @returns A promise that resolves once the operation is completed or
+     * rejects if an error occurs.
      */
     copyFile: async (
         source: PathLike,
@@ -308,7 +337,11 @@ const exported = {
         if (!(await exported.isFile(source))) {
             throw new Error(`"${source.toString('utf-8')}" is not a file`);
         }
-        if (await exported.exists(destination)) {
+        if (
+            (await exported.exists(destination)) &&
+            !(await exported.isDirectory(destination)) &&
+            !force
+        ) {
             throw new Error(
                 `"${destination.toString('utf-8')}" already exists`
             );
@@ -326,8 +359,8 @@ const exported = {
      * @param destination - The location to copy the source to.
      * @param force - Whether to forcefully copy.
      *
-     * @returns A promise that resolves once the operation is completed or rejects
-     * if an error occurs.
+     * @returns A promise that resolves once the operation is completed or
+     * rejects if an error occurs.
      */
     copyDirectory: async (
         source: PathLike,
@@ -338,9 +371,17 @@ const exported = {
             throw new Error(`"${source.toString('utf-8')}" is not a directory`);
         }
         if (await exported.exists(destination)) {
-            throw new Error(
-                `"${destination.toString('utf-8')}" already exists`
-            );
+            if (await exported.isFile(destination)) {
+                throw new Error(
+                    `"${destination.toString(
+                        'utf-8'
+                    )}" already exists and is a file`
+                );
+            } else if (!force) {
+                throw new Error(
+                    `"${destination.toString('utf-8')}" already exists`
+                );
+            }
         }
         await cp(source.toString('utf-8'), destination.toString('utf-8'), {
             recursive: true,
