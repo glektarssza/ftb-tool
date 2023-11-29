@@ -10,7 +10,8 @@ import {
     setRequestLimit,
     setUserAgent,
     getFlameFile,
-    getFTBFile
+    getFTBFile,
+    waitUntilQueueHasSpace
 } from '../../helpers/net';
 import {VersionCLIOptions} from '.';
 import {ModpackVersionManifest, ModpackVersionFile} from '../../types';
@@ -193,35 +194,52 @@ async function process(args: DownloadCLIOptions): Promise<void> {
     logger.info(
         `Downloading ${filesToDownload.length} files to "${args.tempPath}"...`
     );
-    const downloads = filesToDownload.map(async (file) => {
-        const tempOutputPath = path.join(args.tempPath, file.path, file.name);
-        logger.info(`Downloading "${file.name}" to "${tempOutputPath}"...`);
-        if (await isFile(tempOutputPath)) {
-            await removeFile(tempOutputPath);
-        }
-        if (args.dryRun) {
-            logger.info(
-                `Would have downloaded "${file.name}" with hash "${file.sha1}" to "${tempOutputPath}"`
+    let abort = false;
+    const downloads = filesToDownload
+        .map(async (file) => {
+            //-- Wait until the network queue has space for a request
+            await waitUntilQueueHasSpace();
+            //-- Don't bother if something blew up earlier
+            if (abort) {
+                return;
+            }
+            const tempOutputPath = path.join(
+                args.tempPath,
+                file.path,
+                file.name
             );
-            return;
-        }
-        const os = await createWritableStream(tempOutputPath);
-        let is: Readable;
-        if (file.curseforge) {
-            is = await getFlameFile(
-                file.curseforge.project,
-                file.curseforge.file
-            );
-        } else {
-            is = await getFTBFile(file.url);
-        }
-        await new Promise<void>((resolve, reject) => {
-            is.addListener('end', resolve).addListener('error', reject);
-            is.pipe(os);
-        }).finally(() => {
-            os.close();
+            logger.info(`Downloading "${file.name}" to "${tempOutputPath}"...`);
+            if (await isFile(tempOutputPath)) {
+                await removeFile(tempOutputPath);
+            }
+            if (args.dryRun) {
+                logger.info(
+                    `Would have downloaded "${file.name}" with hash "${file.sha1}" to "${tempOutputPath}"`
+                );
+                return;
+            }
+            const os = await createWritableStream(tempOutputPath);
+            let is: Readable;
+            if (file.curseforge) {
+                is = await getFlameFile(
+                    file.curseforge.project,
+                    file.curseforge.file
+                );
+            } else {
+                is = await getFTBFile(file.url);
+            }
+            await new Promise<void>((resolve, reject) => {
+                is.addListener('end', resolve).addListener('error', reject);
+                is.pipe(os);
+            }).finally(() => {
+                os.close();
+            });
+        })
+        .map(async (p) => {
+            return p.catch(() => {
+                abort = true;
+            });
         });
-    });
     //-- Wait for all downloads to complete
     await Promise.all(downloads);
     if (args.archive === ArchiveType.None) {
