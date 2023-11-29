@@ -19,6 +19,7 @@ import {
     checkFileIntegrity,
     copyDirectory,
     createDirectory,
+    createFile,
     createOSTempDirectory,
     createWritableStream,
     isFile,
@@ -211,6 +212,7 @@ async function process(args: DownloadCLIOptions): Promise<void> {
             if (await isFile(tempOutputPath)) {
                 await removeFile(tempOutputPath);
             }
+            await createFile(tempOutputPath, true);
             const os = await createWritableStream(tempOutputPath);
             let is: Readable;
             //-- Wait until the network queue has space for a request
