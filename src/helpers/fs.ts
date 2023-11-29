@@ -5,13 +5,14 @@ import {
     cp,
     CreateReadStreamOptions,
     CreateWriteStreamOptions,
+    mkdir,
     mkdtemp,
     open,
     rm,
     stat
 } from 'node:fs/promises';
 import {tmpdir} from 'node:os';
-import path from 'node:path';
+import * as nodePath from 'node:path';
 
 /**
  * A collection of file system helpers.
@@ -176,6 +177,81 @@ const exported = {
     },
 
     /**
+     * Create a directory.
+     *
+     * @param path - The path to create a directory at.
+     * @param recursive - Whether to create any necessary parent directories.
+     *
+     * @returns A promise that resolves once the directory is created or rejects
+     * if any error occurs.
+     */
+    createDirectory: async (
+        path: PathLike,
+        recursive = true
+    ): Promise<void> => {
+        if (
+            (await exported.exists(path)) &&
+            !(await exported.isDirectory(path))
+        ) {
+            throw new Error(
+                `"${path.toString(
+                    'utf-8'
+                )}" already exists and is not a directory`
+            );
+        }
+        await mkdir(path, {
+            recursive
+        });
+    },
+
+    /**
+     * Create a file.
+     *
+     * @param path - The path to create a file at.
+     * @param ensureDirectory - Whether to ensure the parent directory exists.
+     * If `true` and the parent directory does not exist it will be created by
+     * calling `createDirectory` with the `recursive` argument set to `true`.
+     *
+     * @returns A promise that resolves once the file is created or rejects if
+     * any error occurs.
+     */
+    createFile: async (path: PathLike, ensureDirectory = false) => {
+        if (await exported.exists(path)) {
+            if (!(await exported.isFile(path))) {
+                throw new Error(
+                    `"${path.toString(
+                        'utf-8'
+                    )}" already exists but is not a file`
+                );
+            }
+            //-- Path already exists and is a file
+            return;
+        }
+        const dirname = nodePath.dirname(path.toString('utf-8'));
+        if (await exported.exists(dirname)) {
+            if (!(await exported.isDirectory(dirname))) {
+                throw new Error(
+                    `Cannot create file "${path.toString(
+                        'utf-8'
+                    )}", parent path exists but is not a directory`
+                );
+            }
+        } else if (!ensureDirectory) {
+            throw new Error(
+                `Cannot create file "${path.toString(
+                    'utf-8'
+                )}", parent path does not exist`
+            );
+        } else {
+            await exported.createDirectory(dirname, true);
+        }
+        //-- Open file in "append" mode which creates the file if it doesn't
+        //-- exist, then immediately close it. This is basically the same as
+        //-- using a shell's `touch` command
+        await (await open(path, 'a')).close();
+    },
+
+    /**
      * Create a readable stream for a given path.
      *
      * @param path - The path to create a readable stream for.
@@ -263,7 +339,7 @@ const exported = {
                 )}", not a directory`
             );
         }
-        const fullPrefix = path.join(root.toString('utf-8'), prefix);
+        const fullPrefix = nodePath.join(root.toString('utf-8'), prefix);
         return mkdtemp(fullPrefix, 'utf-8');
     },
 
