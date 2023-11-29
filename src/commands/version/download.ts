@@ -197,29 +197,31 @@ async function process(args: DownloadCLIOptions): Promise<void> {
     let abort = false;
     const downloads = filesToDownload
         .map(async (file) => {
-            //-- Wait until the network queue has space for a request
-            await waitUntilQueueHasSpace();
-            //-- Don't bother if something blew up earlier
-            if (abort) {
-                return;
-            }
             const tempOutputPath = path.join(
                 args.tempPath,
                 file.path,
                 file.name
             );
-            logger.info(`Downloading "${file.name}" to "${tempOutputPath}"...`);
-            if (await isFile(tempOutputPath)) {
-                await removeFile(tempOutputPath);
-            }
             if (args.dryRun) {
                 logger.info(
                     `Would have downloaded "${file.name}" with hash "${file.sha1}" to "${tempOutputPath}"`
                 );
                 return;
             }
+            if (await isFile(tempOutputPath)) {
+                await removeFile(tempOutputPath);
+            }
             const os = await createWritableStream(tempOutputPath);
             let is: Readable;
+            //-- Wait until the network queue has space for a request
+            await waitUntilQueueHasSpace();
+            //-- Don't bother if something blew up earlier
+            if (abort) {
+                os.close();
+                await removeFile(tempOutputPath);
+                return;
+            }
+            logger.info(`Downloading "${file.name}" to "${tempOutputPath}"...`);
             if (file.curseforge) {
                 is = await getFlameFile(
                     file.curseforge.project,
@@ -236,11 +238,12 @@ async function process(args: DownloadCLIOptions): Promise<void> {
             });
         })
         .map(async (p) => {
-            return p.catch(() => {
+            return p.catch((ex: Error) => {
                 abort = true;
+                throw ex;
             });
         });
-    //-- Wait for all downloads to complete
+    //-- Wait for all downloads to settle
     await Promise.all(downloads);
     if (args.archive === ArchiveType.None) {
         logger.info(`Copying "${args.tempPath}" to "${finalDestination}"...`);
