@@ -54,6 +54,31 @@ interface RequestQueueItem<T, D = unknown> {
 }
 
 /**
+ * An item that is waiting for the request queue to have space for another
+ * request.
+ */
+interface WaitingQueueItem {
+    /**
+     * Whether this item has been settled.
+     */
+    settled: boolean;
+
+    /**
+     * Resolve the waiting item.
+     *
+     * @param data - The data to return to the requester.
+     */
+    resolve(): void;
+
+    /**
+     * Fail the waiting item.
+     *
+     * @param reason - The reason the request failed.
+     */
+    fail(reason?: Error): void;
+}
+
+/**
  * The logger for this module.
  */
 const logger = new Logger('net');
@@ -98,6 +123,12 @@ const requestsInFlight: RequestQueueItem<unknown>[] = [];
  * A list of requests waiting to be processed.
  */
 const requestQueue: RequestQueueItem<unknown>[] = [];
+
+/**
+ * The queue of items waiting for the request queue to have space for their
+ * request.
+ */
+const waitingQueue: WaitingQueueItem[] = [];
 
 /**
  * The current user agent.
@@ -493,24 +524,76 @@ export function pumpQueue() {
         i < remainingRequestCapacity && i < requestQueue.length;
         i++
     ) {
-        const requestUUID = createUUID();
         const requestItem = requestQueue.shift();
         if (requestItem === undefined) {
             throw new Error('Failed to get next request to perform');
         }
+        const requestUUID = createUUID();
         requestItem.uuid = requestUUID;
+        requestsInFlight.push(requestItem);
         requestItem.instance
             .request(requestItem.request)
             .then((response) => requestItem.resolve(response))
             .catch((err: Error) => requestItem.fail(err))
             .finally(() => {
-                const i = requestQueue.findIndex(
+                const i = requestsInFlight.findIndex(
                     (request) => request.uuid === requestUUID
                 );
                 if (i >= 0) {
-                    requestQueue.splice(i, 1);
+                    requestsInFlight.splice(i, 1);
                 }
                 pumpQueue();
             });
+        //-- Notify first thing waiting that there's space in the queue
+        const waiter = waitingQueue.shift();
+        if (waiter === undefined) {
+            return;
+        }
+        waiter.resolve();
     }
+}
+
+export async function waitUntilQueueHasSpace(
+    timeout = Infinity
+): Promise<void> {
+    let remainingRequestCapacity = requestLimit - requestsInFlight.length;
+    //-- Resolve immediately if there's capacity available
+    if (remainingRequestCapacity > 0) {
+        return;
+    }
+    await new Promise<void>((resolve, reject) => {
+        remainingRequestCapacity = requestLimit - requestsInFlight.length;
+        //-- Resolve immediately if there's capacity available
+        if (remainingRequestCapacity > 0) {
+            return;
+        }
+        const item = {
+            settled: false,
+            resolve: () => {
+                if (item.settled) {
+                    return;
+                }
+                item.settled = true;
+                resolve();
+            },
+            fail: (err: Error) => {
+                if (item.settled) {
+                    return;
+                }
+                item.settled = true;
+                reject(err);
+            }
+        };
+        waitingQueue.push(item);
+        if (isFinite(timeout) && timeout > 0) {
+            setTimeout(() => {
+                item.fail(
+                    new Error(
+                        `Spent more than ${timeout} ms waiting for space in network queue`
+                    )
+                );
+            }, timeout);
+        }
+        pumpQueue();
+    });
 }
