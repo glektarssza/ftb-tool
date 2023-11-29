@@ -17,6 +17,7 @@ import {ModpackVersionManifest, ModpackVersionFile} from '../../types';
 import {
     checkFileIntegrity,
     copyDirectory,
+    createDirectory,
     createOSTempDirectory,
     createWritableStream,
     isFile,
@@ -189,7 +190,9 @@ async function process(args: DownloadCLIOptions): Promise<void> {
             })
         )
     ).filter((file): file is ModpackVersionFile => !isNil(file));
-    logger.info(`Downloading ${filesToDownload.length} files...`);
+    logger.info(
+        `Downloading ${filesToDownload.length} files to "${args.tempPath}"...`
+    );
     const downloads = filesToDownload.map(async (file) => {
         const tempOutputPath = path.join(args.tempPath, file.path, file.name);
         logger.info(`Downloading "${file.name}" to "${tempOutputPath}"...`);
@@ -340,6 +343,8 @@ export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
             args.tempPath = (await createOSTempDirectory('ftb-tool-')).toString(
                 'utf-8'
             );
+        } else {
+            await createDirectory(args.tempPath);
         }
         try {
             await process(args);
