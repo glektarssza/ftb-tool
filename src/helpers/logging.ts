@@ -221,7 +221,7 @@ class Logger {
             levelText = colorFunc(levelText);
         }
         this.outputStream.write(
-            `${typeof levelText === 'string' ? levelText : ''} [${
+            `${typeof levelText === 'string' ? levelText + ' ' : ''}[${
                 this.name
             }] ${message}\n`
         );
