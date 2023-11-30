@@ -204,8 +204,20 @@ function buildBaseRequestConfig(path: string): AxiosRequestConfig {
  *
  * @returns An Axios request config.
  */
-function buildFTBRequestConfig(path: string): AxiosRequestConfig {
+function buildFTBBaseRequestConfig(path: string): AxiosRequestConfig {
     return buildBaseRequestConfig(path);
+}
+
+/**
+ * Build the Axios request config for making a request to the given path on the
+ * Feed the Beast API.
+ *
+ * @param path - The path component of the request to make.
+ *
+ * @returns An Axios request config.
+ */
+function buildFTBRequestConfig(path: string): AxiosRequestConfig {
+    return buildFTBBaseRequestConfig(path);
 }
 
 /**
@@ -217,7 +229,7 @@ function buildFTBRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
-    const request = _.merge(buildFTBRequestConfig(path), {
+    const request = _.merge(buildFTBBaseRequestConfig(path), {
         responseType: 'stream'
     });
     delete request.transformResponse;
@@ -487,6 +499,15 @@ export async function getFlame<T, D = unknown>(
     return (
         await makeFlameRequest<T>(
             _.merge(buildFlameRequestConfig(path), {
+                transformResponse: [
+                    (resp: unknown) => {
+                        if (_.isPlainObject(resp)) {
+                            return (resp as {data: CurseForgeFileManifest})
+                                .data;
+                        }
+                        return resp;
+                    }
+                ],
                 method: 'GET',
                 data
             })
