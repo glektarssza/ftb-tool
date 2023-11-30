@@ -93,12 +93,14 @@ const DEFAULT_OPTIONS: AxiosRequestConfig = {
     validateStatus(status: number) {
         return status >= 200 && status < 300;
     },
-    transformResponse(resp) {
-        if (typeof resp === 'string') {
-            return JSON.parse(resp) as unknown;
+    transformResponse: [
+        (resp: unknown) => {
+            if (typeof resp === 'string') {
+                return JSON.parse(resp) as unknown;
+            }
+            return resp;
         }
-        return resp as unknown;
-    }
+    ]
 };
 
 /**
@@ -164,7 +166,7 @@ async function makeRequest<T, D = unknown>(
     request: AxiosRequestConfig<D>
 ): Promise<AxiosResponse<T>> {
     logger.verbose(
-        `Making ${request.method} request to ${request.baseURL} for ${request.url}`
+        `Making ${request.method} request to ${instance.defaults.baseURL} for ${request.url}`
     );
     return new Promise<AxiosResponse<T>>((resolve, reject) => {
         requestQueue.push({
@@ -215,10 +217,11 @@ function buildFTBRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
-    return _.merge(buildFTBRequestConfig(path), {
-        responseType: 'stream',
-        transformResponse: []
+    const request = _.merge(buildFTBRequestConfig(path), {
+        responseType: 'stream'
     });
+    delete request.transformResponse;
+    return request;
 }
 
 /**
@@ -233,7 +236,15 @@ function buildFlameRequestConfig(path: string): AxiosRequestConfig {
     return _.merge(buildBaseRequestConfig(path), {
         headers: {
             'X-API-Key': flameAPIKey
-        }
+        },
+        transformResponse: [
+            (resp: unknown) => {
+                if (_.isPlainObject(resp) && _.has(resp, 'data')) {
+                    return (resp as {data: unknown}).data;
+                }
+                return resp;
+            }
+        ]
     });
 }
 
@@ -246,10 +257,11 @@ function buildFlameRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFlameFileRequestConfig(path: string): AxiosRequestConfig {
-    return _.merge(buildFlameRequestConfig(path), {
-        responseType: 'stream',
-        transformResponse: []
+    const config = _.merge(buildFlameRequestConfig(path), {
+        responseType: 'stream'
     });
+    delete config.transformResponse;
+    return config;
 }
 
 /**
