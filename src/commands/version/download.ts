@@ -10,13 +10,16 @@ import {
     setRequestLimit,
     setUserAgent,
     getFlameFile,
-    getFTBFile
+    getFTBFile,
+    waitUntilQueueHasSpace
 } from '../../helpers/net';
 import {VersionCLIOptions} from '.';
 import {ModpackVersionManifest, ModpackVersionFile} from '../../types';
 import {
     checkFileIntegrity,
     copyDirectory,
+    createDirectory,
+    createFile,
     createOSTempDirectory,
     createWritableStream,
     isFile,
@@ -29,33 +32,6 @@ import {isNil} from '../../helpers';
  * The logger for this module.
  */
 const logger = new Logger('command:version:download');
-
-/**
- * A list of supported archive formats.
- */
-export enum ArchiveType {
-    /**
-     * Do not create an archive.
-     */
-    None = 'none',
-
-    /**
-     * A `.zip` archive.
-     */
-    Zip = 'zip',
-
-    /**
-     * A `.tar` archive.
-     *
-     * Does not support compression.
-     */
-    Tar = 'tar',
-
-    /**
-     * A `.tar` file compressed with `gzip`.
-     */
-    TarGzip = 'tar.gz'
-}
 
 /**
  * The command-line options for the `version download` sub-command.
@@ -78,13 +54,6 @@ export interface DownloadCLIOptions extends VersionCLIOptions {
      * called `ftb-{MODPACK_ID}` if `archive` is not set.
      */
     outputDir: string;
-
-    /**
-     * Whether to package the modpack version files into a single archive.
-     *
-     * Defaults to `None`.
-     */
-    archive: ArchiveType;
 
     /**
      * The amount of compression to apply to the generated archive.
@@ -134,6 +103,14 @@ export interface DownloadCLIOptions extends VersionCLIOptions {
      * Defaults to `true`.
      */
     cleanupTemp: boolean;
+
+    /**
+     * Whether to perform the download as a dry-run without actually downloading
+     * anything.
+     *
+     * Defaults to `false`.
+     */
+    dryRun: boolean;
 }
 
 /**
@@ -158,11 +135,9 @@ async function shouldDownloadFile(
 }
 
 async function process(args: DownloadCLIOptions): Promise<void> {
-    const isArchive = args.archive !== ArchiveType.None;
     const finalDestination = path.join(
         args.outputDir,
-        `ftb-${args.modpackId}-${args.versionId}`,
-        isArchive ? `.${args.archive}` : ''
+        `ftb-${args.modpackId}-${args.versionId}`
     );
     logger.info(
         `Downloading modpack with ID "${args.modpackId}", version with ID "${args.versionId}"`
@@ -181,38 +156,68 @@ async function process(args: DownloadCLIOptions): Promise<void> {
             })
         )
     ).filter((file): file is ModpackVersionFile => !isNil(file));
-    logger.info(`Downloading ${filesToDownload.length} files...`);
-    const downloads = filesToDownload.map(async (file) => {
-        const tempOutputPath = path.join(args.tempPath, file.path, file.name);
-        logger.info(`Downloading "${file.name}" to "${tempOutputPath}"...`);
-        if (await isFile(tempOutputPath)) {
-            await removeFile(tempOutputPath);
-        }
-        const os = await createWritableStream(tempOutputPath);
-        let is: Readable;
-        if (file.curseforge) {
-            is = await getFlameFile(
-                file.curseforge.project,
-                file.curseforge.file
+    logger.info(
+        `Downloading ${filesToDownload.length} files to "${args.tempPath}"...`
+    );
+    let abort = false;
+    const downloads = filesToDownload
+        .map(async (file) => {
+            const tempOutputPath = path.join(
+                args.tempPath,
+                file.path,
+                file.name
             );
-        } else {
-            is = await getFTBFile(file.url);
-        }
-        await new Promise<void>((resolve, reject) => {
-            is.addListener('end', resolve).addListener('error', reject);
-            is.pipe(os);
-        }).finally(() => {
-            os.close();
+            if (args.dryRun) {
+                logger.info(
+                    `Would have downloaded "${file.name}" with hash "${file.sha1}" to "${tempOutputPath}"`
+                );
+                return;
+            }
+            if (await isFile(tempOutputPath)) {
+                await removeFile(tempOutputPath);
+            }
+            await createFile(tempOutputPath, true);
+            const os = await createWritableStream(tempOutputPath);
+            let is: Readable;
+            //-- Wait until the network queue has space for a request
+            await waitUntilQueueHasSpace();
+            //-- Don't bother if something blew up earlier
+            if (abort) {
+                os.close();
+                await removeFile(tempOutputPath);
+                return;
+            }
+            logger.info(`Downloading "${file.name}" to "${tempOutputPath}"...`);
+            if (file.curseforge) {
+                is = await getFlameFile(
+                    file.curseforge.project,
+                    file.curseforge.file
+                );
+            } else {
+                is = await getFTBFile(file.url);
+            }
+            await new Promise<void>((resolve, reject) => {
+                is.addListener('end', resolve).addListener('error', reject);
+                is.pipe(os);
+            }).finally(() => {
+                os.close();
+            });
+        })
+        .map(async (p) => {
+            return p.catch((ex: Error) => {
+                abort = true;
+                throw ex;
+            });
         });
-    });
-    //-- Wait for all downloads to complete
+    //-- Wait for all downloads to settle
     await Promise.all(downloads);
-    if (args.archive === ArchiveType.None) {
-        logger.info(`Copying "${args.tempPath}" to "${finalDestination}"...`);
-        await copyDirectory(args.tempPath, finalDestination);
-    } else {
-        // TODO: Archive files
+    logger.info(`Copying "${args.tempPath}" to "${finalDestination}"...`);
+    if (args.dryRun) {
+        logger.info(
+            `Would have copied ${downloads.length} files to "${finalDestination}"`
+        );
     }
+    await copyDirectory(args.tempPath, finalDestination);
 }
 
 export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
@@ -238,17 +243,6 @@ export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
                 defaultDescription:
                     'The current working directory if "archive" is set, a directory named "ftb-{MODPACK_ID}" otherwise.',
                 normalize: true
-            })
-            .option('archive', {
-                type: 'string',
-                description: 'The type of archive to create, if any.',
-                choices: [
-                    ArchiveType.None,
-                    ArchiveType.Tar,
-                    ArchiveType.TarGzip,
-                    ArchiveType.Zip
-                ],
-                default: ArchiveType.None
             })
             .option('compression', {
                 type: 'number',
@@ -289,6 +283,11 @@ export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
                 description:
                     'Whether to delete the temporary directory after the program runs.',
                 default: true
+            })
+            .option('dryRun', {
+                type: 'boolean',
+                description: 'Whether to perform the download as a dry-run.',
+                default: false
             });
     },
     async handler(args) {
@@ -308,6 +307,8 @@ export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
             args.tempPath = (await createOSTempDirectory('ftb-tool-')).toString(
                 'utf-8'
             );
+        } else {
+            await createDirectory(args.tempPath);
         }
         try {
             await process(args);

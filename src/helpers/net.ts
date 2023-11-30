@@ -4,6 +4,7 @@ import {
     AxiosRequestConfig,
     AxiosResponse
 } from 'axios';
+import _ from 'lodash';
 import {v4 as createUUID} from 'uuid';
 import {Logger} from './logging';
 import {
@@ -54,6 +55,31 @@ interface RequestQueueItem<T, D = unknown> {
 }
 
 /**
+ * An item that is waiting for the request queue to have space for another
+ * request.
+ */
+interface WaitingQueueItem {
+    /**
+     * Whether this item has been settled.
+     */
+    settled: boolean;
+
+    /**
+     * Resolve the waiting item.
+     *
+     * @param data - The data to return to the requester.
+     */
+    resolve(): void;
+
+    /**
+     * Fail the waiting item.
+     *
+     * @param reason - The reason the request failed.
+     */
+    fail(reason?: Error): void;
+}
+
+/**
  * The logger for this module.
  */
 const logger = new Logger('net');
@@ -67,12 +93,14 @@ const DEFAULT_OPTIONS: AxiosRequestConfig = {
     validateStatus(status: number) {
         return status >= 200 && status < 300;
     },
-    transformResponse(resp) {
-        if (typeof resp === 'string') {
-            return JSON.parse(resp) as unknown;
+    transformResponse: [
+        (resp: unknown) => {
+            if (typeof resp === 'string') {
+                return JSON.parse(resp) as unknown;
+            }
+            return resp;
         }
-        return resp as unknown;
-    }
+    ]
 };
 
 /**
@@ -98,6 +126,12 @@ const requestsInFlight: RequestQueueItem<unknown>[] = [];
  * A list of requests waiting to be processed.
  */
 const requestQueue: RequestQueueItem<unknown>[] = [];
+
+/**
+ * The queue of items waiting for the request queue to have space for their
+ * request.
+ */
+const waitingQueue: WaitingQueueItem[] = [];
 
 /**
  * The current user agent.
@@ -132,7 +166,7 @@ async function makeRequest<T, D = unknown>(
     request: AxiosRequestConfig<D>
 ): Promise<AxiosResponse<T>> {
     logger.verbose(
-        `Making ${request.method} request to ${request.baseURL} for ${request.url}`
+        `Making ${request.method} request to ${instance.defaults.baseURL} for ${request.url}`
     );
     return new Promise<AxiosResponse<T>>((resolve, reject) => {
         requestQueue.push({
@@ -153,14 +187,25 @@ async function makeRequest<T, D = unknown>(
  * @returns A base Axios request config.
  */
 function buildBaseRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...DEFAULT_OPTIONS,
+    return _.merge(_.cloneDeep(DEFAULT_OPTIONS), {
         timeout: requestTimeout,
         url: path,
         headers: {
             'User-Agent': userAgent
         }
-    };
+    });
+}
+
+/**
+ * Build the Axios request config for making a request to the given path on the
+ * Feed the Beast API.
+ *
+ * @param path - The path component of the request to make.
+ *
+ * @returns An Axios request config.
+ */
+function buildFTBBaseRequestConfig(path: string): AxiosRequestConfig {
+    return buildBaseRequestConfig(path);
 }
 
 /**
@@ -172,9 +217,7 @@ function buildBaseRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFTBRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...buildBaseRequestConfig(path)
-    };
+    return buildFTBBaseRequestConfig(path);
 }
 
 /**
@@ -186,11 +229,26 @@ function buildFTBRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...buildFTBRequestConfig(path),
-        responseType: 'stream',
-        transformResponse: []
-    };
+    const request = _.merge(buildFTBBaseRequestConfig(path), {
+        responseType: 'stream'
+    });
+    return request;
+}
+
+/**
+ * Build the Axios request config for making a request to the given path on the
+ * CurseForge API.
+ *
+ * @param path - The path component of the request to make.
+ *
+ * @returns An Axios request config.
+ */
+function buildFlameBaseRequestConfig(path: string): AxiosRequestConfig {
+    return _.merge(buildBaseRequestConfig(path), {
+        headers: {
+            'X-API-Key': flameAPIKey
+        }
+    });
 }
 
 /**
@@ -202,12 +260,13 @@ function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFlameRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...buildBaseRequestConfig(path),
-        headers: {
-            'X-API-Key': flameAPIKey
-        }
-    };
+    return _.merge(buildFlameBaseRequestConfig(path), {
+        transformResponse: [
+            (resp: unknown) => {
+                return (resp as {data: unknown}).data;
+            }
+        ]
+    });
 }
 
 /**
@@ -219,11 +278,10 @@ function buildFlameRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFlameFileRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...buildFlameRequestConfig(path),
-        responseType: 'stream',
-        transformResponse: []
-    };
+    const config = _.merge(buildFlameBaseRequestConfig(path), {
+        responseType: 'stream'
+    });
+    return config;
 }
 
 /**
@@ -400,11 +458,12 @@ export async function getFTB<T, D = unknown>(
     data?: D | undefined
 ): Promise<T> {
     return (
-        await makeFTBRequest<T>({
-            ...buildFTBRequestConfig(path),
-            method: 'GET',
-            data
-        })
+        await makeFTBRequest<T>(
+            _.merge(buildFTBRequestConfig(path), {
+                method: 'GET',
+                data
+            })
+        )
     ).data;
 }
 
@@ -422,11 +481,12 @@ export async function getFTBFile<D = unknown>(
     data?: D | undefined
 ): Promise<Readable> {
     return (
-        await makeFTBFileRequest({
-            ...buildFTBFileRequestConfig(path),
-            method: 'GET',
-            data
-        })
+        await makeFTBFileRequest(
+            _.merge(buildFTBFileRequestConfig(path), {
+                method: 'GET',
+                data
+            })
+        )
     ).data;
 }
 
@@ -445,11 +505,21 @@ export async function getFlame<T, D = unknown>(
     data?: D | undefined
 ): Promise<T> {
     return (
-        await makeFlameRequest<T>({
-            ...buildFlameRequestConfig(path),
-            method: 'GET',
-            data
-        })
+        await makeFlameRequest<T>(
+            _.merge(buildFlameRequestConfig(path), {
+                transformResponse: [
+                    (resp: unknown) => {
+                        if (_.isPlainObject(resp)) {
+                            return (resp as {data: CurseForgeFileManifest})
+                                .data;
+                        }
+                        return resp;
+                    }
+                ],
+                method: 'GET',
+                data
+            })
+        )
     ).data;
 }
 
@@ -472,11 +542,12 @@ export async function getFlameFile<D = unknown>(
         `/mods/${projectId}/files/${fileId}`
     );
     return (
-        await makeFlameFileRequest({
-            ...buildFlameFileRequestConfig(downloadUrl),
-            method: 'GET',
-            data
-        })
+        await makeFlameFileRequest(
+            _.merge(buildFlameFileRequestConfig(downloadUrl), {
+                method: 'GET',
+                data
+            })
+        )
     ).data;
 }
 
@@ -493,24 +564,76 @@ export function pumpQueue() {
         i < remainingRequestCapacity && i < requestQueue.length;
         i++
     ) {
-        const requestUUID = createUUID();
         const requestItem = requestQueue.shift();
         if (requestItem === undefined) {
             throw new Error('Failed to get next request to perform');
         }
+        const requestUUID = createUUID();
         requestItem.uuid = requestUUID;
+        requestsInFlight.push(requestItem);
         requestItem.instance
             .request(requestItem.request)
             .then((response) => requestItem.resolve(response))
             .catch((err: Error) => requestItem.fail(err))
             .finally(() => {
-                const i = requestQueue.findIndex(
+                const i = requestsInFlight.findIndex(
                     (request) => request.uuid === requestUUID
                 );
                 if (i >= 0) {
-                    requestQueue.splice(i, 1);
+                    requestsInFlight.splice(i, 1);
                 }
                 pumpQueue();
             });
+        //-- Notify first thing waiting that there's space in the queue
+        const waiter = waitingQueue.shift();
+        if (waiter === undefined) {
+            return;
+        }
+        waiter.resolve();
     }
+}
+
+export async function waitUntilQueueHasSpace(
+    timeout = Infinity
+): Promise<void> {
+    let remainingRequestCapacity = requestLimit - requestsInFlight.length;
+    //-- Resolve immediately if there's capacity available
+    if (remainingRequestCapacity > 0) {
+        return;
+    }
+    await new Promise<void>((resolve, reject) => {
+        remainingRequestCapacity = requestLimit - requestsInFlight.length;
+        //-- Resolve immediately if there's capacity available
+        if (remainingRequestCapacity > 0) {
+            return;
+        }
+        const item = {
+            settled: false,
+            resolve: () => {
+                if (item.settled) {
+                    return;
+                }
+                item.settled = true;
+                resolve();
+            },
+            fail: (err: Error) => {
+                if (item.settled) {
+                    return;
+                }
+                item.settled = true;
+                reject(err);
+            }
+        };
+        waitingQueue.push(item);
+        if (isFinite(timeout) && timeout > 0) {
+            setTimeout(() => {
+                item.fail(
+                    new Error(
+                        `Spent more than ${timeout} ms waiting for space in network queue`
+                    )
+                );
+            }, timeout);
+        }
+        pumpQueue();
+    });
 }

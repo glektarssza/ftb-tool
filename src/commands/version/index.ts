@@ -1,5 +1,6 @@
 import {CommandModule} from 'yargs';
 import {command as info} from './info';
+import {command as download} from './download';
 import {GlobalCLIOptions} from '../../types';
 
 /**
@@ -14,7 +15,7 @@ export const command: CommandModule<GlobalCLIOptions, VersionCLIOptions> = {
     command: 'version',
     describe: 'Operations relating to modpack versions.',
     builder(yargs) {
-        return yargs.command(info);
+        return yargs.command(info).command(download);
     },
     handler() {
         //-- Do nothing
