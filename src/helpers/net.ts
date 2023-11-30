@@ -88,8 +88,6 @@ const logger = new Logger('net');
  * The default options for configuring Axios.
  */
 const DEFAULT_OPTIONS: AxiosRequestConfig = {
-    responseType: 'json',
-    responseEncoding: 'UTF-8',
     validateStatus(status: number) {
         return status >= 200 && status < 300;
     },
@@ -217,7 +215,10 @@ function buildFTBBaseRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFTBRequestConfig(path: string): AxiosRequestConfig {
-    return buildFTBBaseRequestConfig(path);
+    return _.merge(buildFTBBaseRequestConfig(path), {
+        responseType: 'json',
+        responseEncoding: 'UTF-8'
+    });
 }
 
 /**
@@ -261,11 +262,8 @@ function buildFlameBaseRequestConfig(path: string): AxiosRequestConfig {
  */
 function buildFlameRequestConfig(path: string): AxiosRequestConfig {
     return _.merge(buildFlameBaseRequestConfig(path), {
-        transformResponse: [
-            (resp: unknown) => {
-                return (resp as {data: unknown}).data;
-            }
-        ]
+        responseType: 'json',
+        responseEncoding: 'UTF-8'
     });
 }
 
@@ -507,15 +505,6 @@ export async function getFlame<T, D = unknown>(
     return (
         await makeFlameRequest<T>(
             _.merge(buildFlameRequestConfig(path), {
-                transformResponse: [
-                    (resp: unknown) => {
-                        if (_.isPlainObject(resp)) {
-                            return (resp as {data: CurseForgeFileManifest})
-                                .data;
-                        }
-                        return resp;
-                    }
-                ],
                 method: 'GET',
                 data
             })
@@ -538,12 +527,12 @@ export async function getFlameFile<D = unknown>(
     fileId: number,
     data?: D | undefined
 ): Promise<Readable> {
-    const {downloadUrl} = await getFlame<CurseForgeFileManifest>(
+    const resp = await getFlame<{data: CurseForgeFileManifest}>(
         `/mods/${projectId}/files/${fileId}`
     );
     return (
         await makeFlameFileRequest(
-            _.merge(buildFlameFileRequestConfig(downloadUrl), {
+            _.merge(buildFlameFileRequestConfig(resp.data.downloadUrl), {
                 method: 'GET',
                 data
             })
