@@ -95,7 +95,11 @@ const DEFAULT_OPTIONS: AxiosRequestConfig = {
     },
     transformResponse(resp) {
         if (typeof resp === 'string') {
-            return JSON.parse(resp) as unknown;
+            try {
+                return JSON.parse(resp) as unknown;
+            } catch {
+                logger.warn(`Failed to parse response as JSON`);
+            }
         }
         return resp as unknown;
     }
