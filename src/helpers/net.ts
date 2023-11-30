@@ -232,7 +232,6 @@ function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
     const request = _.merge(buildFTBBaseRequestConfig(path), {
         responseType: 'stream'
     });
-    delete request.transformResponse;
     return request;
 }
 
@@ -244,17 +243,27 @@ function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
  *
  * @returns An Axios request config.
  */
-function buildFlameRequestConfig(path: string): AxiosRequestConfig {
+function buildFlameBaseRequestConfig(path: string): AxiosRequestConfig {
     return _.merge(buildBaseRequestConfig(path), {
         headers: {
             'X-API-Key': flameAPIKey
-        },
+        }
+    });
+}
+
+/**
+ * Build the Axios request config for making a request to the given path on the
+ * CurseForge API.
+ *
+ * @param path - The path component of the request to make.
+ *
+ * @returns An Axios request config.
+ */
+function buildFlameRequestConfig(path: string): AxiosRequestConfig {
+    return _.merge(buildFlameBaseRequestConfig(path), {
         transformResponse: [
             (resp: unknown) => {
-                if (_.isPlainObject(resp) && _.has(resp, 'data')) {
-                    return (resp as {data: unknown}).data;
-                }
-                return resp;
+                return (resp as {data: unknown}).data;
             }
         ]
     });
@@ -269,10 +278,9 @@ function buildFlameRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFlameFileRequestConfig(path: string): AxiosRequestConfig {
-    const config = _.merge(buildFlameRequestConfig(path), {
+    const config = _.merge(buildFlameBaseRequestConfig(path), {
         responseType: 'stream'
     });
-    delete config.transformResponse;
     return config;
 }
 
