@@ -4,6 +4,7 @@ import {
     AxiosRequestConfig,
     AxiosResponse
 } from 'axios';
+import _ from 'lodash';
 import {v4 as createUUID} from 'uuid';
 import {Logger} from './logging';
 import {
@@ -184,14 +185,16 @@ async function makeRequest<T, D = unknown>(
  * @returns A base Axios request config.
  */
 function buildBaseRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...DEFAULT_OPTIONS,
-        timeout: requestTimeout,
-        url: path,
-        headers: {
-            'User-Agent': userAgent
-        }
-    };
+    return _.merge(
+        {
+            timeout: requestTimeout,
+            url: path,
+            headers: {
+                'User-Agent': userAgent
+            }
+        },
+        DEFAULT_OPTIONS
+    );
 }
 
 /**
@@ -203,9 +206,7 @@ function buildBaseRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFTBRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...buildBaseRequestConfig(path)
-    };
+    return buildBaseRequestConfig(path);
 }
 
 /**
@@ -217,11 +218,12 @@ function buildFTBRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...buildFTBRequestConfig(path),
-        responseType: 'stream',
-        transformResponse: []
-    };
+    return _.merge(
+        {
+            responseType: 'stream'
+        },
+        buildFTBRequestConfig(path)
+    );
 }
 
 /**
@@ -233,12 +235,14 @@ function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFlameRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...buildBaseRequestConfig(path),
-        headers: {
-            'X-API-Key': flameAPIKey
-        }
-    };
+    return _.merge(
+        {
+            headers: {
+                'X-API-Key': flameAPIKey
+            }
+        },
+        buildBaseRequestConfig(path)
+    );
 }
 
 /**
@@ -250,11 +254,12 @@ function buildFlameRequestConfig(path: string): AxiosRequestConfig {
  * @returns An Axios request config.
  */
 function buildFlameFileRequestConfig(path: string): AxiosRequestConfig {
-    return {
-        ...buildFlameRequestConfig(path),
-        responseType: 'stream',
-        transformResponse: []
-    };
+    return _.merge(
+        {
+            responseType: 'stream'
+        },
+        buildFlameRequestConfig(path)
+    );
 }
 
 /**
@@ -431,11 +436,15 @@ export async function getFTB<T, D = unknown>(
     data?: D | undefined
 ): Promise<T> {
     return (
-        await makeFTBRequest<T>({
-            ...buildFTBRequestConfig(path),
-            method: 'GET',
-            data
-        })
+        await makeFTBRequest<T>(
+            _.merge(
+                {
+                    method: 'GET',
+                    data
+                },
+                buildFTBRequestConfig(path)
+            )
+        )
     ).data;
 }
 
@@ -453,11 +462,15 @@ export async function getFTBFile<D = unknown>(
     data?: D | undefined
 ): Promise<Readable> {
     return (
-        await makeFTBFileRequest({
-            ...buildFTBFileRequestConfig(path),
-            method: 'GET',
-            data
-        })
+        await makeFTBFileRequest(
+            _.merge(
+                {
+                    method: 'GET',
+                    data
+                },
+                buildFTBFileRequestConfig(path)
+            )
+        )
     ).data;
 }
 
@@ -476,11 +489,15 @@ export async function getFlame<T, D = unknown>(
     data?: D | undefined
 ): Promise<T> {
     return (
-        await makeFlameRequest<T>({
-            ...buildFlameRequestConfig(path),
-            method: 'GET',
-            data
-        })
+        await makeFlameRequest<T>(
+            _.merge(
+                {
+                    method: 'GET',
+                    data
+                },
+                buildFlameRequestConfig(path)
+            )
+        )
     ).data;
 }
 
@@ -503,11 +520,15 @@ export async function getFlameFile<D = unknown>(
         `/mods/${projectId}/files/${fileId}`
     );
     return (
-        await makeFlameFileRequest({
-            ...buildFlameFileRequestConfig(downloadUrl),
-            method: 'GET',
-            data
-        })
+        await makeFlameFileRequest(
+            _.merge(
+                {
+                    method: 'GET',
+                    data
+                },
+                buildFlameFileRequestConfig(downloadUrl)
+            )
+        )
     ).data;
 }
 
