@@ -1933,7 +1933,11 @@ describe('module:helpers.fs', () => {
         it('should call `isDirectory` with the provided source path', async () => {
             //-- Given
             const source = fake.system.directoryPath();
-            const destination = fake.system.directoryPath();
+            let destination = fake.system.directoryPath();
+            // HACK: On the off chance the call returns the same value twice
+            while (destination === source) {
+                destination = fake.system.directoryPath();
+            }
             isDirectoryStub.withArgs(source).resolves(true);
             existsStub.withArgs(destination).resolves(false);
             isDirectoryStub.withArgs(destination).resolves(false);
@@ -1954,7 +1958,11 @@ describe('module:helpers.fs', () => {
         it('should call `exists` with the provided destination path', async () => {
             //-- Given
             const source = fake.system.directoryPath();
-            const destination = fake.system.directoryPath();
+            let destination = fake.system.directoryPath();
+            // HACK: On the off chance the call returns the same value twice
+            while (destination === source) {
+                destination = fake.system.directoryPath();
+            }
             isDirectoryStub.withArgs(source).resolves(true);
             existsStub.withArgs(destination).resolves(false);
             isDirectoryStub.withArgs(destination).resolves(false);
@@ -1976,7 +1984,7 @@ describe('module:helpers.fs', () => {
             //-- Given
             const source = fake.system.directoryPath();
             let destination = fake.system.directoryPath();
-            // HACK: On the offer chance the call returns the same value twice
+            // HACK: On the off chance the call returns the same value twice
             while (source === destination) {
                 destination = fake.system.directoryPath();
             }
@@ -2004,7 +2012,11 @@ describe('module:helpers.fs', () => {
         it('should call `cp` with the provided source path, destination path, and the `recursive` option set to `true`', async () => {
             //-- Given
             const source = fake.system.directoryPath();
-            const destination = fake.system.directoryPath();
+            let destination = fake.system.directoryPath();
+            // HACK: On the off chance the call returns the same value twice
+            while (destination === source) {
+                destination = fake.system.directoryPath();
+            }
             isDirectoryStub.withArgs(source).resolves(true);
             existsStub.withArgs(destination).resolves(false);
             isDirectoryStub.withArgs(destination).resolves(false);
@@ -2028,7 +2040,11 @@ describe('module:helpers.fs', () => {
         it('should call `cp` with the provided source path, destination path, and `force` option', async () => {
             //-- Given
             const source = fake.system.directoryPath();
-            const destination = fake.system.directoryPath();
+            let destination = fake.system.directoryPath();
+            // HACK: On the off chance the call returns the same value twice
+            while (destination === source) {
+                destination = fake.system.directoryPath();
+            }
             isDirectoryStub.withArgs(source).resolves(true);
             existsStub.withArgs(destination).resolves(false);
             isDirectoryStub.withArgs(destination).resolves(false);
@@ -2052,7 +2068,11 @@ describe('module:helpers.fs', () => {
         it('should throw an `Error` if the source path is not a directory', async () => {
             //-- Given
             const source = fake.system.directoryPath();
-            const destination = fake.system.directoryPath();
+            let destination = fake.system.directoryPath();
+            // HACK: On the off chance the call returns the same value twice
+            while (destination === source) {
+                destination = fake.system.directoryPath();
+            }
             isDirectoryStub.withArgs(source).resolves(false);
             existsStub.withArgs(destination).resolves(true);
             isDirectoryStub.withArgs(destination).resolves(false);
@@ -2080,7 +2100,11 @@ describe('module:helpers.fs', () => {
         it('throw an `Error` if the destination path exists and is a file', async () => {
             //-- Given
             const source = fake.system.directoryPath();
-            const destination = fake.system.directoryPath();
+            let destination = fake.system.directoryPath();
+            // HACK: On the off chance the call returns the same value twice
+            while (destination === source) {
+                destination = fake.system.directoryPath();
+            }
             isDirectoryStub.withArgs(source).resolves(true);
             existsStub.withArgs(destination).resolves(true);
             isDirectoryStub.withArgs(destination).resolves(false);
@@ -2110,7 +2134,11 @@ describe('module:helpers.fs', () => {
         it('throw an `Error` if the destination path exists, is a directory, and the `force` flag is `false`', async () => {
             //-- Given
             const source = fake.system.directoryPath();
-            const destination = fake.system.directoryPath();
+            let destination = fake.system.directoryPath();
+            // HACK: On the off chance the call returns the same value twice
+            while (destination === source) {
+                destination = fake.system.directoryPath();
+            }
             isDirectoryStub.withArgs(source).resolves(true);
             existsStub.withArgs(destination).resolves(true);
             isDirectoryStub.withArgs(destination).resolves(true);
@@ -2138,7 +2166,11 @@ describe('module:helpers.fs', () => {
         it('should not throw an `Error` if the destination path exists, is a directory, and the `force` flag is `true`', async () => {
             //-- Given
             const source = fake.system.directoryPath();
-            const destination = fake.system.directoryPath();
+            let destination = fake.system.directoryPath();
+            // HACK: On the off chance the call returns the same value twice
+            while (destination === source) {
+                destination = fake.system.directoryPath();
+            }
             isDirectoryStub.withArgs(source).resolves(true);
             existsStub.withArgs(destination).resolves(true);
             isDirectoryStub.withArgs(destination).resolves(true);
