@@ -23,7 +23,7 @@ const fake = new Faker({
     locale: [en, en_US, base]
 });
 
-describe('module:helpers.fs', () => {
+describe('module:helpers.logging', () => {
     before(() => {
         console.debug(
             `Using "${fake.seed(
