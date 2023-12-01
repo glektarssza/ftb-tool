@@ -3,7 +3,7 @@ import crypto, {Hash} from 'node:crypto';
 import {ReadStream, Stats, WriteStream} from 'node:fs';
 import fs, {CreateReadStreamOptions, FileHandle} from 'node:fs/promises';
 import os from 'node:os';
-import path from 'node:path';
+import nodePath from 'node:path';
 
 //-- NPM Packages
 import chai, {expect} from 'chai';
@@ -888,28 +888,265 @@ describe('module:helpers.fs', () => {
         });
     });
     describe('createFile', () => {
-        it('should call `exists` with the path provided');
-        it('should call `isFile` with the path provided if the path exists');
-        it('should call `exists` with the directory name of the provided path');
-        it(
-            'should call `isDirectory` with the directory name of the provided path if the directory name exists'
-        );
-        it(
-            'should call `createDirectory` with the directory name of the provided path if the directory name does not exist and the `ensureDirectory` flag is `true`'
-        );
-        it('should call `open` with the provided path and the `a` flag');
-        it(
-            'should call `open` with the provided path and then immediately close the returned file descriptor'
-        );
-        it(
-            'should throw an `Error` if the provided path exists and is not a file'
-        );
-        it(
-            'should throw an `Error` if the directory name of the path exists and is not a directory'
-        );
-        it(
-            'should throw an `Error` if the directory name of the path does not exists and the `ensureDirectory` flag is `false`'
-        );
+        let existsStub: SinonStub<
+            Parameters<typeof fsHelper.exists>,
+            ReturnType<typeof fsHelper.exists>
+        >;
+        let isFileStub: SinonStub<
+            Parameters<typeof fsHelper.isFile>,
+            ReturnType<typeof fsHelper.isFile>
+        >;
+        let isDirectoryStub: SinonStub<
+            Parameters<typeof fsHelper.isDirectory>,
+            ReturnType<typeof fsHelper.isDirectory>
+        >;
+        let createDirectoryStub: SinonStub<
+            Parameters<typeof fsHelper.createDirectory>,
+            ReturnType<typeof fsHelper.createDirectory>
+        >;
+        let openStub: SinonStub<
+            Parameters<typeof fs.open>,
+            ReturnType<typeof fs.open>
+        >;
+        let closeStub: SinonStub<
+            Parameters<fs.FileHandle['close']>,
+            ReturnType<fs.FileHandle['close']>
+        >;
+        let fileHandleStub: SinonStubbedInstance<fs.FileHandle>;
+        before(() => {
+            existsStub = stub(fsHelper, 'exists');
+            isFileStub = stub(fsHelper, 'isFile');
+            isDirectoryStub = stub(fsHelper, 'isDirectory');
+            createDirectoryStub = stub(fsHelper, 'createDirectory');
+            openStub = stub(fs, 'open');
+            closeStub = stub();
+
+            fileHandleStub = {
+                close: closeStub
+            } as SinonStubbedInstance<fs.FileHandle>;
+        });
+        beforeEach(() => {
+            existsStub.reset();
+            isFileStub.reset();
+            isDirectoryStub.reset();
+            createDirectoryStub.reset();
+            openStub.reset();
+            closeStub.reset();
+
+            existsStub.rejects(new Error('Stubbed function'));
+            isFileStub.rejects(new Error('Stubbed function'));
+            isDirectoryStub.rejects(new Error('Stubbed function'));
+            createDirectoryStub.rejects(new Error('Stubbed function'));
+            openStub.rejects(new Error('Stubbed function'));
+            closeStub.rejects(new Error('Stubbed method'));
+        });
+        after(() => {
+            existsStub.restore();
+            isFileStub.restore();
+            isDirectoryStub.restore();
+            createDirectoryStub.restore();
+            openStub.restore();
+        });
+        it('should call `exists` with the path provided', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(false);
+            existsStub.withArgs(dirPath).resolves(true);
+            isFileStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(dirPath).resolves(true);
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            await fsHelper.createFile(path);
+
+            //-- Then
+            expect(existsStub).to.have.been.calledWith(path);
+        });
+        it('should call `isFile` with the path provided if the path exists', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(true);
+            existsStub.withArgs(dirPath).resolves(true);
+            isFileStub.withArgs(path).resolves(true);
+            isDirectoryStub.withArgs(dirPath).resolves(true);
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            await fsHelper.createFile(path);
+
+            //-- Then
+            expect(isFileStub).to.have.been.calledOnceWith(path);
+        });
+        it('should call `exists` with the directory name of the provided path', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(false);
+            existsStub.withArgs(dirPath).resolves(true);
+            isFileStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(dirPath).resolves(true);
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            await fsHelper.createFile(path);
+
+            //-- Then
+            expect(existsStub).to.have.been.calledWith(dirPath);
+        });
+        it('should call `isDirectory` with the directory name of the provided path if the directory name exists', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(false);
+            existsStub.withArgs(dirPath).resolves(true);
+            isFileStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(dirPath).resolves(true);
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            await fsHelper.createFile(path);
+
+            //-- Then
+            expect(isDirectoryStub).to.have.been.calledOnceWith(dirPath);
+        });
+        it('should call `createDirectory` with the directory name of the provided path if the directory name does not exist and the `ensureDirectory` flag is `true`', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(false);
+            existsStub.withArgs(dirPath).resolves(false);
+            isFileStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(dirPath).resolves(true);
+            createDirectoryStub.resolves();
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            await fsHelper.createFile(path, true);
+
+            //-- Then
+            expect(createDirectoryStub).to.have.been.calledOnceWith(dirPath);
+        });
+        it('should call `open` with the provided path and the `a` flag', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(false);
+            existsStub.withArgs(dirPath).resolves(true);
+            isFileStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(dirPath).resolves(true);
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            await fsHelper.createFile(path);
+
+            //-- Then
+            expect(openStub).to.have.been.calledOnceWith(path, 'a');
+        });
+        it('should call `open` with the provided path and then immediately close the returned file descriptor', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(false);
+            existsStub.withArgs(dirPath).resolves(true);
+            isFileStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(dirPath).resolves(true);
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            await fsHelper.createFile(path);
+
+            //-- Then
+            expect(
+                closeStub
+            ).to.have.been.calledOnce.and.to.have.been.calledImmediatelyAfter(
+                openStub
+            );
+        });
+        it('should throw an `Error` if the provided path exists and is not a file', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(true);
+            existsStub.withArgs(dirPath).resolves(true);
+            isFileStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(dirPath).resolves(true);
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            try {
+                await fsHelper.createFile(path);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(`"${path}" already exists but is not a file`);
+                return;
+            }
+
+            expect.fail('Function did not throw when it should have');
+        });
+        it('should throw an `Error` if the directory name of the path exists and is not a directory', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(false);
+            existsStub.withArgs(dirPath).resolves(true);
+            isFileStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(dirPath).resolves(false);
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            try {
+                await fsHelper.createFile(path);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(
+                        `Cannot create file "${path}", parent path exists but is not a directory`
+                    );
+                return;
+            }
+
+            expect.fail('Function did not throw when it should have');
+        });
+        it('should throw an `Error` if the directory name of the path does not exists and the `ensureDirectory` flag is `false`', async () => {
+            //-- Given
+            const path = fake.system.filePath();
+            const dirPath = nodePath.dirname(path);
+            existsStub.withArgs(path).resolves(false);
+            existsStub.withArgs(dirPath).resolves(false);
+            isFileStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(dirPath).resolves(false);
+            openStub.withArgs(path, 'a').resolves(fileHandleStub);
+            closeStub.resolves();
+
+            //-- When
+            try {
+                await fsHelper.createFile(path);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(
+                        `Cannot create file "${path}", parent path does not exist`
+                    );
+                return;
+            }
+
+            expect.fail('Function did not throw when it should have');
+        });
     });
     describe('.createReadableStream', () => {
         let isReadableStub: SinonStub<
@@ -1421,8 +1658,8 @@ describe('module:helpers.fs', () => {
                 length: 6
             });
             mkdtempStub
-                .withArgs(path.join(root, prefix), 'utf-8')
-                .resolves(path.join(root, `${prefix}${suffix}`));
+                .withArgs(nodePath.join(root, prefix), 'utf-8')
+                .resolves(nodePath.join(root, `${prefix}${suffix}`));
             isDirectoryStub.withArgs(root).resolves(true);
 
             //-- When
@@ -1430,7 +1667,7 @@ describe('module:helpers.fs', () => {
 
             //-- Then
             expect(mkdtempStub).to.have.been.calledOnceWith(
-                path.join(root, prefix),
+                nodePath.join(root, prefix),
                 'utf-8'
             );
         });
@@ -1444,15 +1681,15 @@ describe('module:helpers.fs', () => {
                 length: 6
             });
             mkdtempStub
-                .withArgs(path.join(root, prefix), 'utf-8')
-                .resolves(path.join(root, `${prefix}${suffix}`));
+                .withArgs(nodePath.join(root, prefix), 'utf-8')
+                .resolves(nodePath.join(root, `${prefix}${suffix}`));
             isDirectoryStub.withArgs(root).resolves(true);
 
             //-- When
             const r = await fsHelper.createTempDirectory(root, prefix);
 
             //-- Then
-            expect(r).to.equal(path.join(root, `${prefix}${suffix}`));
+            expect(r).to.equal(nodePath.join(root, `${prefix}${suffix}`));
         });
         it('should throw an `Error` if the root is not a directory', async () => {
             //-- Given
@@ -1464,8 +1701,8 @@ describe('module:helpers.fs', () => {
                 length: 6
             });
             mkdtempStub
-                .withArgs(path.join(root, prefix), 'utf-8')
-                .resolves(path.join(root, `${prefix}${suffix}`));
+                .withArgs(nodePath.join(root, prefix), 'utf-8')
+                .resolves(nodePath.join(root, `${prefix}${suffix}`));
             isDirectoryStub.withArgs(root).resolves(false);
 
             //-- When
@@ -1492,10 +1729,10 @@ describe('module:helpers.fs', () => {
                 length: 6
             });
             mkdtempStub
-                .withArgs(path.join(root, prefix), 'utf-8')
+                .withArgs(nodePath.join(root, prefix), 'utf-8')
                 .rejects(
                     new Error(
-                        `Cannot create directory "${path.join(
+                        `Cannot create directory "${nodePath.join(
                             root,
                             `${prefix}${suffix}`
                         )}", permission denied`
@@ -1511,7 +1748,7 @@ describe('module:helpers.fs', () => {
                     .to.be.an.instanceOf(Error)
                     .with.property('message')
                     .that.equals(
-                        `Cannot create directory "${path.join(
+                        `Cannot create directory "${nodePath.join(
                             root,
                             `${prefix}${suffix}`
                         )}", permission denied`
@@ -1557,7 +1794,7 @@ describe('module:helpers.fs', () => {
             tmpdirStub.returns(osTmpDir);
             createTempDirectoryStub
                 .withArgs(osTmpDir, prefix)
-                .resolves(path.join(osTmpDir, `${prefix}${suffix}`));
+                .resolves(nodePath.join(osTmpDir, `${prefix}${suffix}`));
 
             //-- When
             await fsHelper.createOSTempDirectory(prefix);
@@ -1577,7 +1814,7 @@ describe('module:helpers.fs', () => {
             tmpdirStub.returns(osTmpDir);
             createTempDirectoryStub
                 .withArgs(osTmpDir, prefix)
-                .resolves(path.join(osTmpDir, `${prefix}${suffix}`));
+                .resolves(nodePath.join(osTmpDir, `${prefix}${suffix}`));
 
             //-- When
             await fsHelper.createOSTempDirectory(prefix);
@@ -1600,13 +1837,13 @@ describe('module:helpers.fs', () => {
             tmpdirStub.returns(osTmpDir);
             createTempDirectoryStub
                 .withArgs(osTmpDir, prefix)
-                .resolves(path.join(osTmpDir, `${prefix}${suffix}`));
+                .resolves(nodePath.join(osTmpDir, `${prefix}${suffix}`));
 
             //-- When
             const r = await fsHelper.createOSTempDirectory(prefix);
 
             //-- Then
-            expect(r).to.equal(path.join(osTmpDir, `${prefix}${suffix}`));
+            expect(r).to.equal(nodePath.join(osTmpDir, `${prefix}${suffix}`));
         });
     });
     describe('.removeFile', () => {
