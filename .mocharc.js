@@ -6,6 +6,7 @@ module.exports = {
     ui: 'bdd',
     'check-leaks': true,
     'fail-zero': false,
+    slow: 5000,
     reporter: 'spec',
     extension: ['ts'],
     recursive: true,
