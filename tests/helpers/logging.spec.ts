@@ -28,7 +28,7 @@ describe('module:helpers.fs', () => {
         console.debug(
             `Using "${fake.seed(
                 parseOptionalEnvInteger('TESTS_FAKER_SEED') ?? undefined
-            )}"`
+            )}" as random data seed for "module:helpers.logging" tests...`
         );
     });
     beforeEach(() => {
