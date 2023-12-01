@@ -552,7 +552,7 @@ const exported = {
                     break;
                 case '.tar.gz':
                 case '.tgz':
-                    archiveType = exported.ArchiveType.Tar;
+                    archiveType = exported.ArchiveType.TarGzip;
                     break;
                 default:
                     throw new Error(`Unsupported archive type "${extension}"`);
