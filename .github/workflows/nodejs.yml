@@ -23,7 +23,7 @@ jobs:
         name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
-          node-version: latest
+          node-version: v19.8.1
           cache: npm
       - id: npm-install
         name: Run "npm install"
@@ -54,7 +54,7 @@ jobs:
         name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
-          node-version: latest
+          node-version: v19.8.1
           cache: npm
       - id: npm-install
         name: Run "npm install"
@@ -84,7 +84,7 @@ jobs:
         name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
-          node-version: latest
+          node-version: v19.8.1
           cache: npm
       - id: npm-install
         name: Run "npm install"
@@ -115,7 +115,7 @@ jobs:
         name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
-          node-version: latest
+          node-version: v19.8.1
           cache: npm
       - id: npm-install
         name: Run "npm install"
