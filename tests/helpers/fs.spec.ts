@@ -2582,4 +2582,64 @@ describe('module:helpers.fs', () => {
             }
         });
     });
+    describe('.archiveDirectory', () => {
+        it('should call `exists` with the output path');
+        it('should call `exists` with the source path');
+        it('should call `isDirectory` with the source path');
+        it('should call `createFile` with the output path');
+        it('should call `createWritableStream` with the output path');
+        it(
+            'should call `createArchiver` with the archive format `zip` if a zip archive is requested'
+        );
+        it(
+            'should call `createArchiver` with the archive format `zip` if a zip archive is not explicitly requested but the output path ends in `.zip`'
+        );
+        it(
+            'should call `createArchiver` with the archive format `tar` if a tar archive is requested'
+        );
+        it(
+            'should call `createArchiver` with the archive format `tar` if a tar archive is not explicitly requested but the output path ends in `.tar`'
+        );
+        it(
+            'should call `createArchiver` with the archive format `tar` if a tgz archive is requested'
+        );
+        it(
+            'should call `createArchiver` with the archive format `tar` if a tar archive is not explicitly requested but the output path ends in `.tgz` or `.tar.gz`'
+        );
+        it(
+            'should call `createArchiver` with `zlib` defined and the `level` property set to the requested compression level if the requested archive format is `zip`'
+        );
+        it(
+            'should call `createArchiver` with neither `zlib` or `gzipOptions` defined and the `level` property set to the requested compression level if the requested archive format is `tar`'
+        );
+        it(
+            'should call `createArchiver` with `gzipOptions` defined and the `level` property set to the requested compression level if the requested archive format is `tgz`'
+        );
+        it(
+            'should call `createArchiver` with `store` set to `true` if the `level` property set to the requested compression level is set to `0` and the requested archive format is `zip`'
+        );
+        it(
+            'should call `createArchiver` with `store` set to `true` if the `level` property set to the requested compression level is set to `0` and the requested archive format is `tgz`'
+        );
+        it(
+            'should call `archiver.pipe` with the writable stream of the output file'
+        );
+        it(
+            'should call `archiver.directory` with the source path and the `destpath` parameter set to `false`'
+        );
+        it('should call `archiver.finalize` once the directory is provided');
+        it('should call `os.close` once the archive is finalized');
+        it('should call `os.close` if the archive fails to be finalized');
+        it('should call `os.close` if the write stream fails to be created');
+        it('should call `removeFile` if the archive fails to be finalized');
+        it('should call `removeFile` if the write stream fails to be created');
+        it('should throw an `Error` if the output path already exists');
+        it('should throw an `Error` if the source path does not exist');
+        it(
+            'should throw an `Error` if the source path exists but is not a directory'
+        );
+        it(
+            'should throw an `Error` if no archive type is provided and it cannot be deduced from the output path'
+        );
+    });
 });
