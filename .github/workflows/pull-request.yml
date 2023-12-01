@@ -1,0 +1,59 @@
+name: Pull Request
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      checks: write
+    steps:
+      - id: checkout-repository
+        name: Checkout repository
+        uses: actions/checkout@v4
+      - id: setup-nodejs
+        name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+          cache: npm
+      - id: npm-install
+        name: Run "npm install"
+        run: npm install
+      - id: eslint
+        name: Run ESLint on pull request
+        uses: bradennapier/eslint-plus-action@v3.4.2
+  test:
+    name: Test
+    runs-on: ${{matrix.os}}
+    permissions:
+      contents: read
+    needs:
+      - lint
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          - windows-latest
+          - macos-latest
+          - ubuntu-latest
+    steps:
+      - id: checkout-repository
+        name: Checkout repository
+        uses: actions/checkout@v4
+      - id: setup-nodejs
+        name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+          cache: npm
+      - id: npm-install
+        name: Run "npm install"
+        run: npm install
+      - id: npm-test
+        name: Run "npm run test:ci"
+        run: npm run test:ci
