@@ -1,5 +1,6 @@
 {
     "extends": "@istanbuljs/nyc-config-typescript",
+    "skipEmpty": true,
     "all": true,
     "reporter": [
         "text"
@@ -11,8 +12,7 @@
         "**/tests",
         "**/coverage",
         "**/*.js",
-        "**/*.d.ts",
-        "**/index.ts"
+        "**/*.d.ts"
     ],
     "clean": true
 }
