@@ -578,8 +578,6 @@ const exported = {
             };
         }
         const logger = new Logger('fs:createArchive');
-        await exported.createFile(outputPath);
-        const os = await exported.createWritableStream(outputPath);
         const archiver = createArchiver(archiveFormat, opts);
         archiver.on('error', (err) => {
             logger.error(`Error while creating archive: ${err.message}`);
@@ -587,9 +585,22 @@ const exported = {
         archiver.on('warning', (err) => {
             logger.warn(`Issue while creating archive: ${err.message}`);
         });
+        await exported.createFile(outputPath);
+        let os: WriteStream;
+        try {
+            os = await exported.createWritableStream(outputPath);
+        } catch (ex) {
+            await exported.removeFile(outputPath);
+            throw ex;
+        }
         archiver.pipe(os);
         archiver.directory(path.toString('utf-8'), false);
-        await archiver.finalize();
+        try {
+            await archiver.finalize().finally(() => os.close());
+        } catch (ex) {
+            await exported.removeFile(outputPath);
+            throw ex;
+        }
         logger.info(
             `Created archive at "${outputPath.toString(
                 'utf-8'
