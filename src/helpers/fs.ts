@@ -24,22 +24,24 @@ import {Logger} from './logging';
 /**
  * An enumeration of supported archive types.
  */
-enum ArchiveType {
+const ArchiveTypeEnum = {
     /**
      * A `zip` archive.
      */
-    Zip = 'zip',
+    Zip: 'zip',
 
     /**
      * A `tar` archive.
      */
-    Tar = 'tar',
+    Tar: 'tar',
 
     /**
      * A `tar` archive compressed with `gzip`.
      */
-    TarGzip = 'tgz'
-}
+    TarGzip: 'tgz'
+} as const;
+
+type ArchiveType = (typeof ArchiveTypeEnum)[keyof typeof ArchiveTypeEnum];
 
 /**
  * A collection of file system helpers.
@@ -48,7 +50,7 @@ const exported = {
     /**
      * An enumeration of supported archive types.
      */
-    ArchiveType,
+    ArchiveType: ArchiveTypeEnum,
 
     /**
      * Determine whether a path exists.
