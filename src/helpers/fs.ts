@@ -564,7 +564,9 @@ const exported = {
         if (archiveType === exported.ArchiveType.TarGzip) {
             opts.gzip = true;
         }
-        if (compressionLevel === 0) {
+        if (archiveType === exported.ArchiveType.Tar) {
+            //-- Do nothing
+        } else if (compressionLevel === 0) {
             opts.store = true;
         } else if (archiveType === exported.ArchiveType.Zip) {
             opts.zlib = {
