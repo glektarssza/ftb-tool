@@ -16,6 +16,8 @@ import {
 import {VersionCLIOptions} from '.';
 import {ModpackVersionManifest, ModpackVersionFile} from '../../types';
 import {
+    ArchiveType,
+    archiveDirectory,
     checkFileIntegrity,
     copyDirectory,
     createDirectory,
@@ -54,6 +56,15 @@ export interface DownloadCLIOptions extends VersionCLIOptions {
      * called `ftb-{MODPACK_ID}` if `archive` is not set.
      */
     outputDir: string;
+
+    /**
+     * The type of archive to create.
+     */
+    archive:
+        | typeof ArchiveType.Tar
+        | typeof ArchiveType.TarGzip
+        | typeof ArchiveType.Zip
+        | undefined;
 
     /**
      * The amount of compression to apply to the generated archive.
@@ -135,10 +146,16 @@ async function shouldDownloadFile(
 }
 
 async function process(args: DownloadCLIOptions): Promise<void> {
-    const finalDestination = path.join(
-        args.outputDir,
-        `ftb-${args.modpackId}-${args.versionId}`
-    );
+    const finalDestination =
+        args.archive === undefined
+            ? path.join(
+                  args.outputDir,
+                  `ftb-${args.modpackId}-${args.versionId}`
+              )
+            : path.join(
+                  args.outputDir,
+                  `ftb-${args.modpackId}-${args.versionId}.${args.archive}`
+              );
     logger.info(
         `Downloading modpack with ID "${args.modpackId}", version with ID "${args.versionId}"`
     );
@@ -211,13 +228,30 @@ async function process(args: DownloadCLIOptions): Promise<void> {
         });
     //-- Wait for all downloads to settle
     await Promise.all(downloads);
-    logger.info(`Copying "${args.tempPath}" to "${finalDestination}"...`);
-    if (args.dryRun) {
+    if (args.archive === undefined) {
+        logger.info(`Copying "${args.tempPath}" to "${finalDestination}"...`);
+        if (args.dryRun) {
+            logger.info(
+                `Would have copied ${downloads.length} files to "${finalDestination}"`
+            );
+        }
+        await copyDirectory(args.tempPath, finalDestination);
+    } else {
         logger.info(
-            `Would have copied ${downloads.length} files to "${finalDestination}"`
+            `Generating archive of "${args.tempPath}" to "${finalDestination}"...`
+        );
+        if (args.dryRun) {
+            logger.info(
+                `Would have archived ${downloads.length} files to "${finalDestination}"`
+            );
+        }
+        await archiveDirectory(
+            args.tempPath,
+            finalDestination,
+            args.archive,
+            args.compression
         );
     }
-    await copyDirectory(args.tempPath, finalDestination);
 }
 
 export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
@@ -243,6 +277,16 @@ export const command: CommandModule<VersionCLIOptions, DownloadCLIOptions> = {
                 defaultDescription:
                     'The current working directory if "archive" is set, a directory named "ftb-{MODPACK_ID}" otherwise.',
                 normalize: true
+            })
+            .option('archive', {
+                type: 'string',
+                description: 'The type of archive to create.',
+                choices: [
+                    ArchiveType.Zip,
+                    ArchiveType.Tar,
+                    ArchiveType.TarGzip
+                ],
+                default: undefined
             })
             .option('compression', {
                 type: 'number',

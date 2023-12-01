@@ -1,3 +1,4 @@
+//-- NodeJS
 import {createHash} from 'node:crypto';
 import {constants, PathLike, ReadStream, WriteStream} from 'node:fs';
 import {
@@ -14,10 +15,39 @@ import {
 import {tmpdir} from 'node:os';
 import * as nodePath from 'node:path';
 
+//-- NPM Packages
+import {ArchiverOptions, create as createArchiver} from 'archiver';
+import {Logger} from './logging';
+
+/**
+ * An enumeration of supported archive types.
+ */
+enum ArchiveType {
+    /**
+     * A `zip` archive.
+     */
+    Zip = 'zip',
+
+    /**
+     * A `tar` archive.
+     */
+    Tar = 'tar',
+
+    /**
+     * A `tar` archive compressed with `gzip`.
+     */
+    TarGzip = 'tgz'
+}
+
 /**
  * A collection of file system helpers.
  */
 const exported = {
+    /**
+     * An enumeration of supported archive types.
+     */
+    ArchiveType,
+
     /**
      * Determine whether a path exists.
      *
@@ -464,6 +494,100 @@ const exported = {
             recursive: true,
             force
         });
+    },
+
+    /**
+     * Generate an archive of a directory.
+     *
+     * @param path - The path to archive.
+     * @param outputPath - The path to the location to place the archive at.
+     * @param archiveType - The type of archive to create. Automatically deduced
+     * from the `outputPath` extension if possible.
+     * @param compressionLevel - The amount of compression to apply to the
+     * output archive. `0` means no compression and `9` means maximum
+     * compression.
+     *
+     * @returns A promise that resolves once the archive has been created or
+     * rejects if an error occurs.
+     */
+    archiveDirectory: async (
+        path: PathLike,
+        outputPath: PathLike,
+        archiveType?: ArchiveType | undefined,
+        compressionLevel = 4
+    ) => {
+        if (await exported.exists(outputPath)) {
+            throw new Error(
+                `Cannot create archive at "${outputPath.toString(
+                    'utf-8'
+                )}", path already exists`
+            );
+        }
+        if (!(await exported.exists(path))) {
+            throw new Error(
+                `Cannot create archive from "${path.toString(
+                    'utf-8'
+                )}", path does not exist`
+            );
+        }
+        if (!(await exported.isDirectory(path))) {
+            throw new Error(
+                `Cannot create archive from "${path.toString(
+                    'utf-8'
+                )}", path exists but is not a directory`
+            );
+        }
+        if (archiveType === undefined) {
+            const extension = nodePath.extname(outputPath.toString('utf-8'));
+            switch (extension) {
+                case '.zip':
+                    archiveType = exported.ArchiveType.Zip;
+                    break;
+                case '.tar':
+                    archiveType = exported.ArchiveType.Tar;
+                    break;
+                case '.tar.gz':
+                case '.tgz':
+                    archiveType = exported.ArchiveType.Tar;
+                    break;
+                default:
+                    throw new Error(`Unsupported archive type "${extension}"`);
+            }
+        }
+        const archiveFormat =
+            archiveType === exported.ArchiveType.Zip ? 'zip' : 'tar';
+        const opts: ArchiverOptions = {};
+        if (archiveType === exported.ArchiveType.TarGzip) {
+            opts.gzip = true;
+        }
+        if (compressionLevel === 0) {
+            opts.store = true;
+        } else if (archiveType === exported.ArchiveType.Zip) {
+            opts.zlib = {
+                level: compressionLevel
+            };
+        } else if (archiveType === exported.ArchiveType.TarGzip) {
+            opts.gzipOptions = {
+                level: compressionLevel
+            };
+        }
+        const logger = new Logger('fs:createArchive');
+        const os = await exported.createWritableStream(outputPath);
+        const archiver = createArchiver(archiveFormat, opts);
+        archiver.on('error', (err) => {
+            logger.error(`Error while creating archive: ${err.message}`);
+        });
+        archiver.on('warning', (err) => {
+            logger.warn(`Issue while creating archive: ${err.message}`);
+        });
+        archiver.pipe(os);
+        archiver.directory(path.toString('utf-8'), false);
+        await archiver.finalize();
+        logger.info(
+            `Created archive at "${outputPath.toString(
+                'utf-8'
+            )}" of size ${archiver.pointer()} bytes`
+        );
     }
 };
 
