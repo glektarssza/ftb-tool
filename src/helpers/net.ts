@@ -151,478 +151,492 @@ let requestLimit = DEFAULT_NET_REQUEST_LIMIT;
  */
 let requestTimeout = DEFAULT_NET_TIMEOUT;
 
-/**
- * Make a request to the given endpoint.
- *
- * @typeparam T - The shape of the data expected in the response.
- * @typeparam D - The shape of the data expected in the request body.
- * @param instance - The Axios instance to make the request to.
- * @param request - The request to make.
- */
-async function makeRequest<T, D = unknown>(
-    instance: Axios,
-    request: AxiosRequestConfig<D>
-): Promise<AxiosResponse<T>> {
-    logger.verbose(
-        `Making ${request.method} request to ${instance.defaults.baseURL} for ${request.url}`
-    );
-    return new Promise<AxiosResponse<T>>((resolve, reject) => {
-        requestQueue.push({
-            instance,
-            request,
-            resolve,
-            fail: reject
-        });
-        pumpQueue();
-    });
-}
+const exported = {
+    /**
+     * Get the timeout of network requests, in milliseconds.
+     *
+     * @returns The timeout of network requests, in milliseconds.
+     */
+    getRequestTimeout: (): number => {
+        return requestTimeout;
+    },
 
-/**
- * Build the base Axios request config for a given path.
- *
- * @param path - The path component of the request to make.
- *
- * @returns A base Axios request config.
- */
-function buildBaseRequestConfig(path: string): AxiosRequestConfig {
-    return _.merge(_.cloneDeep(DEFAULT_OPTIONS), {
-        timeout: requestTimeout,
-        url: path,
-        headers: {
-            'User-Agent': userAgent
-        }
-    });
-}
+    /**
+     * Set the timeout of network requests, in milliseconds.
+     *
+     * @param value - The new timeout of network requests, in milliseconds.
+     */
+    setRequestTimeout: (value: number) => {
+        requestTimeout = value;
+    },
 
-/**
- * Build the Axios request config for making a request to the given path on the
- * Feed the Beast API.
- *
- * @param path - The path component of the request to make.
- *
- * @returns An Axios request config.
- */
-function buildFTBBaseRequestConfig(path: string): AxiosRequestConfig {
-    return buildBaseRequestConfig(path);
-}
+    /**
+     * Reset the timeout of network requests, in milliseconds.
+     */
+    resetRequestTimeout: () => {
+        requestTimeout = DEFAULT_NET_TIMEOUT;
+    },
 
-/**
- * Build the Axios request config for making a request to the given path on the
- * Feed the Beast API.
- *
- * @param path - The path component of the request to make.
- *
- * @returns An Axios request config.
- */
-function buildFTBRequestConfig(path: string): AxiosRequestConfig {
-    return _.merge(buildFTBBaseRequestConfig(path), {
-        responseType: 'json',
-        responseEncoding: 'UTF-8'
-    });
-}
+    /**
+     * Get the maximum number of parallel network requests that can be made.
+     *
+     * @returns The maximum number of parallel network requests that can be made.
+     */
+    getRequestLimit: (): number => {
+        return requestLimit;
+    },
 
-/**
- * Build the Axios request config for making a request to the given path on the
- * Feed the Beast API in order to download binary data.
- *
- * @param path - The path component of the request to make.
- *
- * @returns An Axios request config.
- */
-function buildFTBFileRequestConfig(path: string): AxiosRequestConfig {
-    const request = _.merge(buildFTBBaseRequestConfig(path), {
-        responseType: 'stream'
-    });
-    return request;
-}
+    /**
+     * Set the maximum number of parallel network requests that can be made.
+     *
+     * @param value - The new maximum number of parallel network requests that can
+     * be made.
+     */
+    setRequestLimit: (value: number) => {
+        requestLimit = value;
+    },
 
-/**
- * Build the Axios request config for making a request to the given path on the
- * CurseForge API.
- *
- * @param path - The path component of the request to make.
- *
- * @returns An Axios request config.
- */
-function buildFlameBaseRequestConfig(path: string): AxiosRequestConfig {
-    return _.merge(buildBaseRequestConfig(path), {
-        headers: {
-            'X-API-Key': flameAPIKey
-        }
-    });
-}
+    /**
+     * Reset the maximum number of parallel network requests that can be made.
+     */
+    resetRequestLimit: () => {
+        requestLimit = DEFAULT_NET_REQUEST_LIMIT;
+    },
 
-/**
- * Build the Axios request config for making a request to the given path on the
- * CurseForge API.
- *
- * @param path - The path component of the request to make.
- *
- * @returns An Axios request config.
- */
-function buildFlameRequestConfig(path: string): AxiosRequestConfig {
-    return _.merge(buildFlameBaseRequestConfig(path), {
-        responseType: 'json',
-        responseEncoding: 'UTF-8'
-    });
-}
+    /**
+     * Get the user agent to use when making requests.
+     *
+     * @returns The user agent to use when making requests.
+     */
+    getUserAgent: (): AxiosHeaderValue => {
+        return userAgent;
+    },
 
-/**
- * Build the Axios request config for making a request to the given path on the
- * CurseForge API in order to download binary data.
- *
- * @param path - The path component of the request to make.
- *
- * @returns An Axios request config.
- */
-function buildFlameFileRequestConfig(path: string): AxiosRequestConfig {
-    const config = _.merge(buildFlameBaseRequestConfig(path), {
-        responseType: 'stream'
-    });
-    return config;
-}
+    /**
+     * Set the user agent to use when making requests.
+     *
+     * @param value - The value to set the user agent to.
+     */
+    setUserAgent: (value: string) => {
+        userAgent = value;
+    },
 
-/**
- * Get the timeout of network requests, in milliseconds.
- *
- * @returns The timeout of network requests, in milliseconds.
- */
-export function getRequestTimeout(): number {
-    return requestTimeout;
-}
+    /**
+     * Reset the user agent to use when making requests to the default value.
+     */
+    resetUserAgent: () => {
+        exported.setUserAgent(DEFAULT_USER_AGENT);
+    },
 
-/**
- * Set the timeout of network requests, in milliseconds.
- *
- * @param value - The new timeout of network requests, in milliseconds.
- */
-export function setRequestTimeout(value: number) {
-    requestTimeout = value;
-}
+    /**
+     * Get the API key to use when making requests to the CurseForge API.
+     *
+     * @returns The API key to use when making requests to the CurseForge API.
+     */
+    getFlameAPIKey: (): AxiosHeaderValue => {
+        return flameAPIKey;
+    },
 
-/**
- * Reset the timeout of network requests, in milliseconds.
- */
-export function resetRequestTimeout() {
-    requestTimeout = DEFAULT_NET_TIMEOUT;
-}
+    /**
+     * Set the API key to use when making requests to the CurseForge API.
+     *
+     * @param value - The API key to use when making requests to the CurseForge API.
+     */
+    setFlameAPIKey: (value: string) => {
+        flameAPIKey = value;
+    },
 
-/**
- * Get the maximum number of parallel network requests that can be made.
- *
- * @returns The maximum number of parallel network requests that can be made.
- */
-export function getRequestLimit(): number {
-    return requestLimit;
-}
+    /**
+     * Reset the API key to use when making requests to the CurseForge API.
+     */
+    resetFlameAPIKey: () => {
+        flameAPIKey = null;
+    },
 
-/**
- * Set the maximum number of parallel network requests that can be made.
- *
- * @param value - The new maximum number of parallel network requests that can
- * be made.
- */
-export function setRequestLimit(value: number) {
-    requestLimit = value;
-}
-
-/**
- * Reset the maximum number of parallel network requests that can be made.
- */
-export function resetRequestLimit() {
-    requestLimit = DEFAULT_NET_REQUEST_LIMIT;
-}
-
-/**
- * Get the user agent to use when making requests.
- *
- * @returns The user agent to use when making requests.
- */
-export function getUserAgent(): AxiosHeaderValue {
-    return userAgent;
-}
-
-/**
- * Set the user agent to use when making requests.
- *
- * @param value - The value to set the user agent to.
- */
-export function setUserAgent(value: string) {
-    userAgent = value;
-}
-
-/**
- * Reset the user agent to use when making requests to the default value.
- */
-export function resetUserAgent() {
-    setUserAgent(DEFAULT_USER_AGENT);
-}
-
-/**
- * Get the API key to use when making requests to the CurseForge API.
- *
- * @returns The API key to use when making requests to the CurseForge API.
- */
-export function getFlameAPIKey(): AxiosHeaderValue {
-    return flameAPIKey;
-}
-
-/**
- * Set the API key to use when making requests to the CurseForge API.
- *
- * @param value - The API key to use when making requests to the CurseForge API.
- */
-export function setFlameAPIKey(value: string) {
-    flameAPIKey = value;
-}
-
-/**
- * Reset the API key to use when making requests to the CurseForge API.
- */
-export function resetFlameAPIKey() {
-    flameAPIKey = null;
-}
-
-/**
- * Make a request to the Feed the Beast API.
- *
- * @typeparam T - The shape of the data expected as a response.
- * @param request - The request to make.
- *
- * @returns A promise that resolves to the response of the request or rejects if
- * an error occurs.
- */
-export async function makeFTBRequest<T>(
-    request: AxiosRequestConfig
-): Promise<AxiosResponse<T>> {
-    return makeRequest(ftb, request);
-}
-
-/**
- * Make a request to the Feed the Beast API to download binary data.
- *
- * @param request - The request to make.
- *
- * @returns A promise that resolves to the response of the request or rejects if
- * an error occurs.
- */
-export async function makeFTBFileRequest(
-    request: AxiosRequestConfig
-): Promise<AxiosResponse<Readable>> {
-    return makeRequest(ftb, request);
-}
-
-/**
- * Make a request to the CurseForge API.
- *
- * @typeparam T - The shape of the data expected as a response.
- * @param request - The request to make.
- *
- * @returns A promise that resolves to the response of the request or rejects if
- * an error occurs.
- */
-export async function makeFlameRequest<T>(
-    request: AxiosRequestConfig
-): Promise<AxiosResponse<T>> {
-    return makeRequest(flame, request);
-}
-
-/**
- * Make a request to the CurseForge API to download binary data.
- *
- * @param request - The request to make.
- *
- * @returns A promise that resolves to the response of the request or rejects if
- * an error occurs.
- */
-export async function makeFlameFileRequest(
-    request: AxiosRequestConfig
-): Promise<AxiosResponse<Readable>> {
-    return makeRequest(flame, request);
-}
-
-/**
- * Make a `GET` request to the Feed the Beast API.
- *
- * @typeparam T - The shape of the data expected as a response.
- * @typeparam D - The shape of the data to send with the request.
- * @param path - The path to make the request to.
- *
- * @returns A promise that resolves to the response of the request or rejects if
- * an error occurs.
- */
-export async function getFTB<T, D = unknown>(
-    path: string,
-    data?: D | undefined
-): Promise<T> {
-    return (
-        await makeFTBRequest<T>(
-            _.merge(buildFTBRequestConfig(path), {
-                method: 'GET',
-                data
-            })
-        )
-    ).data;
-}
-
-/**
- * Make a `GET` request to the Feed the Beast API.
- *
- * @typeparam D - The shape of the data to send with the request.
- * @param path - The path to make the request to.
- *
- * @returns A promise that resolves to the response of the request or rejects if
- * an error occurs.
- */
-export async function getFTBFile<D = unknown>(
-    path: string,
-    data?: D | undefined
-): Promise<Readable> {
-    return (
-        await makeFTBFileRequest(
-            _.merge(buildFTBFileRequestConfig(path), {
-                method: 'GET',
-                data
-            })
-        )
-    ).data;
-}
-
-/**
- * Make a `GET` request to the CurseForge API.
- *
- * @typeparam T - The shape of the data expected as a response.
- * @typeparam D - The shape of the data to send with the request.
- * @param path - The path to make the request to.
- *
- * @returns A promise that resolves to the response of the request or rejects if
- * an error occurs.
- */
-export async function getFlame<T, D = unknown>(
-    path: string,
-    data?: D | undefined
-): Promise<T> {
-    return (
-        await makeFlameRequest<T>(
-            _.merge(buildFlameRequestConfig(path), {
-                method: 'GET',
-                data
-            })
-        )
-    ).data;
-}
-
-/**
- * Make a `GET` request to the CurseForge API.
- *
- * @typeparam D - The shape of the data to send with the request.
- * @param projectId - The project ID which the file belongs to.
- * @param fileId - The ID of the file to get.
- *
- * @returns A promise that resolves to the response of the request or rejects if
- * an error occurs.
- */
-export async function getFlameFile<D = unknown>(
-    projectId: number,
-    fileId: number,
-    data?: D | undefined
-): Promise<Readable> {
-    const resp = await getFlame<{data: CurseForgeFileManifest}>(
-        `/mods/${projectId}/files/${fileId}`
-    );
-    return (
-        await makeFlameFileRequest(
-            _.merge(buildFlameFileRequestConfig(resp.data.downloadUrl), {
-                method: 'GET',
-                data
-            })
-        )
-    ).data;
-}
-
-/**
- * Pump the request queue.
- */
-export function pumpQueue() {
-    const remainingRequestCapacity = requestLimit - requestsInFlight.length;
-    if (remainingRequestCapacity <= 0) {
-        return;
-    }
-    for (
-        let i = 0;
-        i < remainingRequestCapacity && i < requestQueue.length;
-        i++
-    ) {
-        const requestItem = requestQueue.shift();
-        if (requestItem === undefined) {
-            throw new Error('Failed to get next request to perform');
-        }
-        const requestUUID = createUUID();
-        requestItem.uuid = requestUUID;
-        requestsInFlight.push(requestItem);
-        requestItem.instance
-            .request(requestItem.request)
-            .then((response) => requestItem.resolve(response))
-            .catch((err: Error) => requestItem.fail(err))
-            .finally(() => {
-                const i = requestsInFlight.findIndex(
-                    (request) => request.uuid === requestUUID
-                );
-                if (i >= 0) {
-                    requestsInFlight.splice(i, 1);
-                }
-                pumpQueue();
+    /**
+     * Make a request to the given endpoint.
+     *
+     * @typeparam T - The shape of the data expected in the response.
+     * @typeparam D - The shape of the data expected in the request body.
+     * @param instance - The Axios instance to make the request to.
+     * @param request - The request to make.
+     */
+    makeRequest: async <T, D = unknown>(
+        instance: Axios,
+        request: AxiosRequestConfig<D>
+    ): Promise<AxiosResponse<T>> => {
+        logger.verbose(
+            `Making ${request.method} request to ${instance.defaults.baseURL} for ${request.url}`
+        );
+        return new Promise<AxiosResponse<T>>((resolve, reject) => {
+            requestQueue.push({
+                instance,
+                request,
+                resolve,
+                fail: reject
             });
-        //-- Notify first thing waiting that there's space in the queue
-        const waiter = waitingQueue.shift();
-        if (waiter === undefined) {
+            exported.pumpQueue();
+        });
+    },
+
+    /**
+     * Build the base Axios request config for a given path.
+     *
+     * @param path - The path component of the request to make.
+     *
+     * @returns A base Axios request config.
+     */
+    buildBaseRequestConfig: (path: string): AxiosRequestConfig => {
+        return _.merge(_.cloneDeep(DEFAULT_OPTIONS), {
+            timeout: requestTimeout,
+            url: path,
+            headers: {
+                'User-Agent': userAgent
+            }
+        });
+    },
+
+    /**
+     * Build the Axios request config for making a request to the given path on the
+     * Feed the Beast API.
+     *
+     * @param path - The path component of the request to make.
+     *
+     * @returns An Axios request config.
+     */
+    buildFTBBaseRequestConfig: (path: string): AxiosRequestConfig => {
+        return exported.buildBaseRequestConfig(path);
+    },
+
+    /**
+     * Build the Axios request config for making a request to the given path on the
+     * Feed the Beast API.
+     *
+     * @param path - The path component of the request to make.
+     *
+     * @returns An Axios request config.
+     */
+    buildFTBRequestConfig: (path: string): AxiosRequestConfig => {
+        return _.merge(exported.buildFTBBaseRequestConfig(path), {
+            responseType: 'json',
+            responseEncoding: 'UTF-8'
+        });
+    },
+
+    /**
+     * Build the Axios request config for making a request to the given path on the
+     * Feed the Beast API in order to download binary data.
+     *
+     * @param path - The path component of the request to make.
+     *
+     * @returns An Axios request config.
+     */
+    buildFTBFileRequestConfig: (path: string): AxiosRequestConfig => {
+        const request = _.merge(exported.buildFTBBaseRequestConfig(path), {
+            responseType: 'stream'
+        });
+        return request;
+    },
+
+    /**
+     * Build the Axios request config for making a request to the given path on the
+     * CurseForge API.
+     *
+     * @param path - The path component of the request to make.
+     *
+     * @returns An Axios request config.
+     */
+    buildFlameBaseRequestConfig: (path: string): AxiosRequestConfig => {
+        return _.merge(exported.buildBaseRequestConfig(path), {
+            headers: {
+                'X-API-Key': flameAPIKey
+            }
+        });
+    },
+
+    /**
+     * Build the Axios request config for making a request to the given path on the
+     * CurseForge API.
+     *
+     * @param path - The path component of the request to make.
+     *
+     * @returns An Axios request config.
+     */
+    buildFlameRequestConfig: (path: string): AxiosRequestConfig => {
+        return _.merge(exported.buildFlameBaseRequestConfig(path), {
+            responseType: 'json',
+            responseEncoding: 'UTF-8'
+        });
+    },
+
+    /**
+     * Build the Axios request config for making a request to the given path on the
+     * CurseForge API in order to download binary data.
+     *
+     * @param path - The path component of the request to make.
+     *
+     * @returns An Axios request config.
+     */
+    buildFlameFileRequestConfig: (path: string): AxiosRequestConfig => {
+        const config = _.merge(exported.buildFlameBaseRequestConfig(path), {
+            responseType: 'stream'
+        });
+        return config;
+    },
+
+    /**
+     * Make a request to the Feed the Beast API.
+     *
+     * @typeparam T - The shape of the data expected as a response.
+     * @param request - The request to make.
+     *
+     * @returns A promise that resolves to the response of the request or rejects if
+     * an error occurs.
+     */
+    makeFTBRequest: async <T>(
+        request: AxiosRequestConfig
+    ): Promise<AxiosResponse<T>> => {
+        return exported.makeRequest(ftb, request);
+    },
+
+    /**
+     * Make a request to the Feed the Beast API to download binary data.
+     *
+     * @param request - The request to make.
+     *
+     * @returns A promise that resolves to the response of the request or rejects if
+     * an error occurs.
+     */
+    makeFTBFileRequest: async (
+        request: AxiosRequestConfig
+    ): Promise<AxiosResponse<Readable>> => {
+        return exported.makeRequest(ftb, request);
+    },
+
+    /**
+     * Make a request to the CurseForge API.
+     *
+     * @typeparam T - The shape of the data expected as a response.
+     * @param request - The request to make.
+     *
+     * @returns A promise that resolves to the response of the request or rejects if
+     * an error occurs.
+     */
+    makeFlameRequest: async <T>(
+        request: AxiosRequestConfig
+    ): Promise<AxiosResponse<T>> => {
+        return exported.makeRequest(flame, request);
+    },
+
+    /**
+     * Make a request to the CurseForge API to download binary data.
+     *
+     * @param request - The request to make.
+     *
+     * @returns A promise that resolves to the response of the request or rejects if
+     * an error occurs.
+     */
+    makeFlameFileRequest: async (
+        request: AxiosRequestConfig
+    ): Promise<AxiosResponse<Readable>> => {
+        return exported.makeRequest(flame, request);
+    },
+
+    /**
+     * Make a `GET` request to the Feed the Beast API.
+     *
+     * @typeparam T - The shape of the data expected as a response.
+     * @typeparam D - The shape of the data to send with the request.
+     * @param path - The path to make the request to.
+     *
+     * @returns A promise that resolves to the response of the request or rejects if
+     * an error occurs.
+     */
+    getFTB: async <T, D = unknown>(
+        path: string,
+        data?: D | undefined
+    ): Promise<T> => {
+        return (
+            await exported.makeFTBRequest<T>(
+                _.merge(exported.buildFTBRequestConfig(path), {
+                    method: 'GET',
+                    data
+                })
+            )
+        ).data;
+    },
+
+    /**
+     * Make a `GET` request to the Feed the Beast API.
+     *
+     * @typeparam D - The shape of the data to send with the request.
+     * @param path - The path to make the request to.
+     *
+     * @returns A promise that resolves to the response of the request or rejects if
+     * an error occurs.
+     */
+    getFTBFile: async <D = unknown>(
+        path: string,
+        data?: D | undefined
+    ): Promise<Readable> => {
+        return (
+            await exported.makeFTBFileRequest(
+                _.merge(exported.buildFTBFileRequestConfig(path), {
+                    method: 'GET',
+                    data
+                })
+            )
+        ).data;
+    },
+
+    /**
+     * Make a `GET` request to the CurseForge API.
+     *
+     * @typeparam T - The shape of the data expected as a response.
+     * @typeparam D - The shape of the data to send with the request.
+     * @param path - The path to make the request to.
+     *
+     * @returns A promise that resolves to the response of the request or rejects if
+     * an error occurs.
+     */
+    getFlame: async <T, D = unknown>(
+        path: string,
+        data?: D | undefined
+    ): Promise<T> => {
+        return (
+            await exported.makeFlameRequest<T>(
+                _.merge(exported.buildFlameRequestConfig(path), {
+                    method: 'GET',
+                    data
+                })
+            )
+        ).data;
+    },
+
+    /**
+     * Make a `GET` request to the CurseForge API.
+     *
+     * @typeparam D - The shape of the data to send with the request.
+     * @param projectId - The project ID which the file belongs to.
+     * @param fileId - The ID of the file to get.
+     *
+     * @returns A promise that resolves to the response of the request or rejects if
+     * an error occurs.
+     */
+    getFlameFile: async <D = unknown>(
+        projectId: number,
+        fileId: number,
+        data?: D | undefined
+    ): Promise<Readable> => {
+        const resp = await exported.getFlame<{data: CurseForgeFileManifest}>(
+            `/mods/${projectId}/files/${fileId}`
+        );
+        return (
+            await exported.makeFlameFileRequest(
+                _.merge(
+                    exported.buildFlameFileRequestConfig(resp.data.downloadUrl),
+                    {
+                        method: 'GET',
+                        data
+                    }
+                )
+            )
+        ).data;
+    },
+
+    /**
+     * Pump the request queue.
+     */
+    pumpQueue: () => {
+        const remainingRequestCapacity = requestLimit - requestsInFlight.length;
+        if (remainingRequestCapacity <= 0) {
             return;
         }
-        waiter.resolve();
-    }
-}
+        for (
+            let i = 0;
+            i < remainingRequestCapacity && i < requestQueue.length;
+            i++
+        ) {
+            const requestItem = requestQueue.shift();
+            if (requestItem === undefined) {
+                throw new Error('Failed to get next request to perform');
+            }
+            const requestUUID = createUUID();
+            requestItem.uuid = requestUUID;
+            requestsInFlight.push(requestItem);
+            requestItem.instance
+                .request(requestItem.request)
+                .then((response) => requestItem.resolve(response))
+                .catch((err: Error) => requestItem.fail(err))
+                .finally(() => {
+                    const i = requestsInFlight.findIndex(
+                        (request) => request.uuid === requestUUID
+                    );
+                    if (i >= 0) {
+                        requestsInFlight.splice(i, 1);
+                    }
+                    exported.pumpQueue();
+                });
+            //-- Notify first thing waiting that there's space in the queue
+            const waiter = waitingQueue.shift();
+            if (waiter === undefined) {
+                return;
+            }
+            waiter.resolve();
+        }
+    },
 
-export async function waitUntilQueueHasSpace(
-    timeout = Infinity
-): Promise<void> {
-    let remainingRequestCapacity = requestLimit - requestsInFlight.length;
-    //-- Resolve immediately if there's capacity available
-    if (remainingRequestCapacity > 0) {
-        return;
-    }
-    await new Promise<void>((resolve, reject) => {
-        remainingRequestCapacity = requestLimit - requestsInFlight.length;
+    /**
+     * Wait until the network request queue has capacity for a request.
+     *
+     * @param timeout - The maximum duration, in milliseconds, to wait. Negative
+     * or non-finite values will be considered equivalent to `Infinity`.
+     *
+     * @returns A promise that resolves once the network request queue has
+     * capacity for a request or rejects if a timeout is provided and reached.
+     */
+    waitUntilQueueHasSpace: async (timeout = Infinity): Promise<void> => {
+        let remainingRequestCapacity = requestLimit - requestsInFlight.length;
         //-- Resolve immediately if there's capacity available
         if (remainingRequestCapacity > 0) {
             return;
         }
-        const item = {
-            settled: false,
-            resolve: () => {
-                if (item.settled) {
-                    return;
-                }
-                item.settled = true;
-                resolve();
-            },
-            fail: (err: Error) => {
-                if (item.settled) {
-                    return;
-                }
-                item.settled = true;
-                reject(err);
+        await new Promise<void>((resolve, reject) => {
+            remainingRequestCapacity = requestLimit - requestsInFlight.length;
+            //-- Resolve immediately if there's capacity available
+            if (remainingRequestCapacity > 0) {
+                return;
             }
-        };
-        waitingQueue.push(item);
-        if (isFinite(timeout) && timeout > 0) {
-            setTimeout(() => {
-                item.fail(
-                    new Error(
-                        `Spent more than ${timeout} ms waiting for space in network queue`
-                    )
-                );
-            }, timeout);
-        }
-        pumpQueue();
-    });
-}
+            const item = {
+                settled: false,
+                resolve: () => {
+                    if (item.settled) {
+                        return;
+                    }
+                    item.settled = true;
+                    resolve();
+                },
+                fail: (err: Error) => {
+                    if (item.settled) {
+                        return;
+                    }
+                    item.settled = true;
+                    reject(err);
+                }
+            };
+            waitingQueue.push(item);
+            if (isFinite(timeout) && timeout > 0) {
+                setTimeout(() => {
+                    item.fail(
+                        new Error(
+                            `Spent more than ${timeout} ms waiting for space in network queue`
+                        )
+                    );
+                }, timeout);
+            }
+            exported.pumpQueue();
+        });
+    }
+};
+
+export = exported;
