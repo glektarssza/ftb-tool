@@ -756,6 +756,161 @@ describe('module:helpers.fs', () => {
             expect(r).to.be.false;
         });
     });
+    describe('createDirectory', () => {
+        let existsStub: SinonStub<
+            Parameters<typeof fsHelper.exists>,
+            ReturnType<typeof fsHelper.exists>
+        >;
+        let isDirectoryStub: SinonStub<
+            Parameters<typeof fsHelper.isDirectory>,
+            ReturnType<typeof fsHelper.isDirectory>
+        >;
+        let mkdirStub: SinonStub<
+            Parameters<typeof fs.mkdir>,
+            ReturnType<typeof fs.mkdir>
+        >;
+        before(() => {
+            existsStub = stub(fsHelper, 'exists');
+            isDirectoryStub = stub(fsHelper, 'isDirectory');
+            mkdirStub = stub(fs, 'mkdir');
+        });
+        beforeEach(() => {
+            existsStub.reset();
+            isDirectoryStub.reset();
+            mkdirStub.reset();
+
+            existsStub.rejects(new Error('Stubbed function'));
+            isDirectoryStub.rejects(new Error('Stubbed function'));
+            mkdirStub.rejects(new Error('Stubbed function'));
+        });
+        after(() => {
+            existsStub.restore();
+            isDirectoryStub.restore();
+            mkdirStub.restore();
+        });
+        it('should called `exists` with the path provided', async () => {
+            //-- Given
+            const path = fake.system.directoryPath();
+            existsStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(path).resolves(false);
+            mkdirStub
+                .withArgs(path, {
+                    recursive: true
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.createDirectory(path);
+
+            //-- Then
+            expect(existsStub).to.have.been.calledOnceWith(path);
+        });
+        it('should called `isDirectory` with the path provided if the path exists', async () => {
+            //-- Given
+            const path = fake.system.directoryPath();
+            existsStub.withArgs(path).resolves(true);
+            isDirectoryStub.withArgs(path).resolves(true);
+            mkdirStub
+                .withArgs(path, {
+                    recursive: true
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.createDirectory(path);
+
+            //-- Then
+            expect(isDirectoryStub).to.have.been.calledOnceWith(path);
+        });
+        it('should call `mkdir` with the path provided and the `recursive` flag set to `true` by default', async () => {
+            //-- Given
+            const path = fake.system.directoryPath();
+            existsStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(path).resolves(false);
+            mkdirStub
+                .withArgs(path, {
+                    recursive: true
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.createDirectory(path);
+
+            //-- Then
+            expect(mkdirStub).to.have.been.calledOnceWith(path, {
+                recursive: true
+            });
+        });
+        it('should call `mkdir` with the path provided and the given `recursive` flag', async () => {
+            //-- Given
+            const path = fake.system.directoryPath();
+            existsStub.withArgs(path).resolves(false);
+            isDirectoryStub.withArgs(path).resolves(false);
+            mkdirStub
+                .withArgs(path, {
+                    recursive: false
+                })
+                .resolves();
+
+            //-- When
+            await fsHelper.createDirectory(path, false);
+
+            //-- Then
+            expect(mkdirStub).to.have.been.calledOnceWith(path, {
+                recursive: false
+            });
+        });
+        it('should throw an `Error` if the path exists and is not a directory', async () => {
+            //-- Given
+            const path = fake.system.directoryPath();
+            existsStub.withArgs(path).resolves(true);
+            isDirectoryStub.withArgs(path).resolves(false);
+            mkdirStub
+                .withArgs(path, {
+                    recursive: true
+                })
+                .resolves();
+
+            //-- When
+            try {
+                await fsHelper.createDirectory(path);
+            } catch (ex) {
+                expect(ex)
+                    .to.be.an.instanceOf(Error)
+                    .with.property('message')
+                    .that.equals(
+                        `"${path}" already exists and is not a directory`
+                    );
+                return;
+            }
+
+            expect.fail('Function did not throw when it should have');
+        });
+    });
+    describe('createFile', () => {
+        it('should call `exists` with the path provided');
+        it('should call `isFile` with the path provided if the path exists');
+        it('should call `exists` with the directory name of the provided path');
+        it(
+            'should call `isDirectory` with the directory name of the provided path if the directory name exists'
+        );
+        it(
+            'should call `createDirectory` with the directory name of the provided path if the directory name does not exist and the `ensureDirectory` flag is `true`'
+        );
+        it('should call `open` with the provided path and the `a` flag');
+        it(
+            'should call `open` with the provided path and then immediately close the returned file descriptor'
+        );
+        it(
+            'should throw an `Error` if the provided path exists and is not a file'
+        );
+        it(
+            'should throw an `Error` if the directory name of the path exists and is not a directory'
+        );
+        it(
+            'should throw an `Error` if the directory name of the path does not exists and the `ensureDirectory` flag is `false`'
+        );
+    });
     describe('.createReadableStream', () => {
         let isReadableStub: SinonStub<
             Parameters<typeof fsHelper.isReadable>,
