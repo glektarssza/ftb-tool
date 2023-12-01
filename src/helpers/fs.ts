@@ -572,6 +572,7 @@ const exported = {
             };
         }
         const logger = new Logger('fs:createArchive');
+        await exported.createFile(outputPath);
         const os = await exported.createWritableStream(outputPath);
         const archiver = createArchiver(archiveFormat, opts);
         archiver.on('error', (err) => {
