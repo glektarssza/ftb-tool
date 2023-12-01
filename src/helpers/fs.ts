@@ -189,15 +189,16 @@ const exported = {
         path: PathLike,
         recursive = true
     ): Promise<void> => {
-        if (
-            (await exported.exists(path)) &&
-            !(await exported.isDirectory(path))
-        ) {
-            throw new Error(
-                `"${path.toString(
-                    'utf-8'
-                )}" already exists and is not a directory`
-            );
+        if (await exported.exists(path)) {
+            if (!(await exported.isDirectory(path))) {
+                throw new Error(
+                    `"${path.toString(
+                        'utf-8'
+                    )}" already exists and is not a directory`
+                );
+            }
+            //-- Path already exists and is a directory
+            return;
         }
         await mkdir(path, {
             recursive
