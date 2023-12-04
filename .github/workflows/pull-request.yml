@@ -24,9 +24,13 @@ jobs:
       - id: npm-install
         name: Run "npm install"
         run: npm install
-      - id: eslint
-        name: Run ESLint on pull request
-        uses: bradennapier/eslint-plus-action@v3.4.2
+      - id: generate-eslint-report
+        name: Generate ESLint results report
+        run: npm run lint:ci -- --output-file eslint_report.json --format json
+        continue-on-error: true
+      - id: annotate-pr
+        name: Annotate PR with ESLint results
+        uses: ataylorme/eslint-annotate-action@v2
   test:
     name: Test
     runs-on: ${{matrix.os}}
