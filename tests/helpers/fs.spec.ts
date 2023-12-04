@@ -1512,6 +1512,7 @@ describe('module:helpers.fs', () => {
         after(() => {
             isFileStub.restore();
             createReadableStreamStub.restore();
+            createHashStub.restore();
         });
         it('should pipe the `ReadStream` to the `Hash`', async () => {
             //-- Given
