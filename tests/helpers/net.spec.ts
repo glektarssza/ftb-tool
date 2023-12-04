@@ -1,12 +1,8 @@
-//-- NodeJS
-
 //-- NPM Packages
 import chai from 'chai';
 import {} from 'sinon';
 import sinonChai from 'sinon-chai';
 import {en, en_US, base, Faker} from '@faker-js/faker';
-
-//-- Project Code
 
 //-- Test Utils
 import {parseOptionalEnvInteger} from '../utils';
