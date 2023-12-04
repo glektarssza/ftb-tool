@@ -1,12 +1,8 @@
-//-- NodeJS
-
 //-- NPM Packages
 import chai from 'chai';
 import {} from 'sinon';
 import sinonChai from 'sinon-chai';
 import {en, en_US, base, Faker} from '@faker-js/faker';
-
-//-- Project Code
 
 //-- Test Utils
 import {parseOptionalEnvInteger} from '../utils';
@@ -20,7 +16,7 @@ const fake = new Faker({
     locale: [en, en_US, base]
 });
 
-describe('module:helpers.fs', () => {
+describe('module:helpers.net', () => {
     before(() => {
         console.debug(
             `Using "${fake.seed(
