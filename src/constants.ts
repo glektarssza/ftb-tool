@@ -6,7 +6,7 @@ export const APP_NAME = 'ftb-tool';
 /**
  * The version of the application.
  */
-export const APP_VERSION = '0.3.1';
+export const APP_VERSION = '0.4.0';
 
 /**
  * Whether to log verbosely by default.
