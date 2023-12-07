@@ -1,0 +1,127 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "npm:install",
+            "detail": "Install dependencies using `npm`.",
+            "icon": {
+                "id": "desktop-download",
+                "color": "terminal.ansiWhite"
+            },
+            "group": "none",
+            "type": "npm",
+            "script": "install",
+            "options": {},
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "runOptions": {
+                "instanceLimit": 1,
+                "reevaluateOnRerun": true,
+                "runOn": "folderOpen"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "npm:lint",
+            "detail": "Lint the project using the `npm run lint` command.",
+            "icon": {
+                "id": "search-fuzzy",
+                "color": "terminal.ansiWhite"
+            },
+            "group": "none",
+            "dependsOn": [
+                "npm:install"
+            ],
+            "dependsOrder": "sequence",
+            "type": "npm",
+            "script": "lint",
+            "options": {},
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "runOptions": {
+                "instanceLimit": 1,
+                "reevaluateOnRerun": true,
+                "runOn": "default"
+            },
+            "problemMatcher": "$eslint-stylish"
+        },
+        {
+            "label": "npm:test",
+            "detail": "Test the project using the `npm test` command.",
+            "icon": {
+                "id": "beaker",
+                "color": "terminal.ansiWhite"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "dependsOn": [
+                "npm:install"
+            ],
+            "dependsOrder": "sequence",
+            "type": "npm",
+            "script": "test",
+            "options": {},
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "runOptions": {
+                "instanceLimit": 1,
+                "reevaluateOnRerun": true,
+                "runOn": "default"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "npm:build",
+            "detail": "Build the project using the `npm run build` command.",
+            "icon": {
+                "id": "combine",
+                "color": "terminal.ansiWhite"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn": [
+                "npm:install"
+            ],
+            "dependsOrder": "sequence",
+            "type": "npm",
+            "script": "build",
+            "options": {},
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "runOptions": {
+                "instanceLimit": 1,
+                "reevaluateOnRerun": true,
+                "runOn": "default"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
