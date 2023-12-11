@@ -1,4 +1,33 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+#!/usr/bin/env bash
 
-npm run lint
+SCRIPT_SOURCE=${BASH_SOURCE[0]}
+while [ -L "$SCRIPT_SOURCE" ]; do
+  SCRIPT_DIR=$( cd -P "$( dirname "$SCRIPT_SOURCE" )" >/dev/null 2>&1 && pwd )
+  SCRIPT_SOURCE=$(readlink "$SCRIPT_SOURCE")
+  [[ $SCRIPT_SOURCE != /* ]] && SCRIPT_SOURCE=$SCRIPT_DIR/$SCRIPT_SOURCE
+done
+SCRIPT_DIR=$( cd -P "$( dirname "$SCRIPT_SOURCE" )" >/dev/null 2>&1 && pwd )
+
+#-- Import Husky stuff
+source "$SCRIPT_DIR/_/husky.sh"
+
+#-- What files are staged to be committed?
+IFS=" "
+STAGED_FILES=( $(git diff --name-only --staged | sed -ne '/\.\(ts\)/p' | xargs) )
+unset IFS
+
+if [[ ${#STAGED_FILES[@]} == 0 ]]; then
+    echo "No source files to lint, skipping..."
+    exit 0
+else
+    echo "Linting ${#STAGED_FILES[@]} files..."
+fi
+
+npm run lint:base -- ${STAGED_FILES[@]}
+
+ERROR_CODE=$?
+
+if [[ $ERROR_CODE != 0 ]]; then
+    echo "Linting failed!"
+    exit $ERROR_CODE
+fi
