@@ -33,8 +33,10 @@
     "scripts": {
         "prepare": "husky install",
         "dev": "tsx ./src/ftb-tool.ts",
-        "lint": "eslint --ext .ts  --cache ./src/ ./tests/",
-        "lint:ci": "eslint --ext .ts ./src/ ./tests/",
+        "lint:base": "eslint --ext .ts",
+        "lint:cache": "npm run lint:base -- --cache",
+        "lint": "npm run lint:cache -- -- ./src/ ./tests/",
+        "lint:ci": "npm run lint -- -- -- ./src/ ./tests/",
         "test": "mocha",
         "test:ci": "npm run coverage",
         "coverage": "nyc npm run test",
