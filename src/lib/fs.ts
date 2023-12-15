@@ -21,6 +21,22 @@ const m = {
             return false;
         }
         return true;
+    },
+
+    /**
+     * Check if a given path-like exists on the file system and is a regular
+     * file.
+     *
+     * @param p - The path-like to check.
+     *
+     * @returns `true` if the given path-like exists on the file system and is a
+     * regular file; `false` otherwise.
+     */
+    async isFile(p: fs.PathLike): Promise<boolean> {
+        if (!(await m.exists(p))) {
+            return false;
+        }
+        return (await fsp.stat(p)).isFile();
     }
 };
 
