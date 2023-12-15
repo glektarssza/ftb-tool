@@ -6,9 +6,12 @@
         "text"
     ],
     "include": [
-        "**/src/helpers/**"
+        "**/src/**"
     ],
     "exclude": [
+        "**/src/commands/**",
+        "**/src/ftb-tool.ts",
+        "**/src/index.ts",
         "**/tests",
         "**/coverage",
         "**/*.js",
