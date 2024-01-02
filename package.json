@@ -67,13 +67,13 @@
         "@types/chai": "^4.3.11",
         "@types/lodash": "^4.14.202",
         "@types/mocha": "^10.0.6",
-        "@types/node": "^20.10.3",
+        "@types/node": "^20.10.6",
         "@types/sinon": "^17.0.2",
         "@types/sinon-chai": "^3.2.12",
         "@types/uuid": "^9.0.7",
         "@types/yargs": "^17.0.32",
-        "@typescript-eslint/eslint-plugin": "^6.13.2",
-        "@typescript-eslint/parser": "^6.13.2",
+        "@typescript-eslint/eslint-plugin": "^6.17.0",
+        "@typescript-eslint/parser": "^6.17.0",
         "@yao-pkg/pkg": "^5.11.0",
         "chai": "^4.3.10",
         "eslint": "^8.55.0",
@@ -86,8 +86,8 @@
         "rimraf": "^5.0.5",
         "sinon": "^17.0.1",
         "sinon-chai": "^3.7.0",
-        "tsx": "^4.6.2",
-        "typescript": "^5.3.2"
+        "tsx": "^4.7.0",
+        "typescript": "^5.3.3"
     },
     "dependencies": {
         "archiver": "^6.0.1",
