@@ -60,6 +60,13 @@
         "rebuild:lib": "npm run clean:lib && npm run build:lib",
         "rebuild:types": "npm run clean:types && npm run build:types"
     },
+    "dependencies": {
+        "archiver": "^6.0.1",
+        "axios": "^1.6.3",
+        "lodash": "^4.17.21",
+        "uuid": "^9.0.1",
+        "yargs": "^17.7.2"
+    },
     "devDependencies": {
         "@faker-js/faker": "^8.3.1",
         "@istanbuljs/nyc-config-typescript": "^1.0.2",
@@ -88,12 +95,5 @@
         "sinon-chai": "^3.7.0",
         "tsx": "^4.7.0",
         "typescript": "^5.3.3"
-    },
-    "dependencies": {
-        "archiver": "^6.0.1",
-        "axios": "^1.6.3",
-        "lodash": "^4.17.21",
-        "uuid": "^9.0.1",
-        "yargs": "^17.7.2"
     }
 }
