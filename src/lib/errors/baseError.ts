@@ -15,7 +15,7 @@ export class BaseError extends Error {
      */
     public constructor(message?: string, inner?: Error) {
         super(message);
-        this.name = this.constructor.name ?? 'Error';
+        this.name = this.constructor.name;
         this.inner = inner;
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, this.constructor);
