@@ -6,7 +6,8 @@
         "text"
     ],
     "include": [
-        "**/src/helpers/**"
+        "**/src/helpers/**",
+        "**/src/lib/**"
     ],
     "exclude": [
         "**/tests",
