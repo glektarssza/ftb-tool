@@ -24,7 +24,7 @@ describe('module:lib.errors.BaseError', () => {
         console.debug(
             `Using "${fake.seed(
                 parseOptionalEnvInteger('TESTS_FAKER_SEED') ?? undefined
-            )}" as random data seed for "module:helpers.fs" tests...`
+            )}" as random data seed for "module:lib.errors.BaseError" tests...`
         );
     });
     describe('.constructor()', () => {
