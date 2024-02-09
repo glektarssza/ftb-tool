@@ -40,6 +40,7 @@ const m = {
  *
  * @internal
  */
+/* istanbul ignore next */
 export function getTestingModule(): typeof m {
     return m;
 }
