@@ -1,3 +1,4 @@
+//-- Project Code
 import {OperationError} from './operationError';
 
 /**
