@@ -1,6 +1,7 @@
 {
     "recommendations": [
         "dbaeumer.vscode-eslint",
+        "rvest.vs-code-prettier-eslint",
         "github.vscode-pull-request-github",
         "github.remotehub",
         "github.vscode-github-actions"
