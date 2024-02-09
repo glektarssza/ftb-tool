@@ -1,4 +1,12 @@
 export {Disposable} from './disposable';
+export {
+    ArgumentError,
+    ArgumentNilError,
+    BaseError,
+    DisposedError,
+    OperationError,
+    StateError
+} from './errors';
 
 /**
  * A module which provides various utilities and helpers for the application.
