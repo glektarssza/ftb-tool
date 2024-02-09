@@ -4,7 +4,7 @@ const path = require('node:path');
 const cpuCoreCount = os.cpus().length;
 const jobs = Math.floor(cpuCoreCount / 2);
 
-process.env['TSX_TSCONFIG_PATH'] = path.resolve(__dirname, './tests/tsconfig.json');
+process.env['TS_NODE_PROJECT'] = path.resolve(__dirname, './tests/tsconfig.json');
 
 console.log(`Using ${jobs} parallel workers...`);
 
@@ -19,6 +19,5 @@ module.exports = {
     extension: ['ts'],
     recursive: true,
     spec: './tests/**/*.spec.ts',
-    'node-option': ['import=tsx'],
-    require: ['source-map-support/register']
+    require: ['source-map-support/register', 'tsconfig-paths/register', 'ts-node/register/transpile-only']
 };
