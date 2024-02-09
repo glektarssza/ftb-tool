@@ -1,3 +1,5 @@
+export {Disposable} from './disposable';
+
 /**
  * A module which provides various utilities and helpers for the application.
  */
