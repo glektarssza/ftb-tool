@@ -15,70 +15,66 @@ const fake = new Faker({
     locale: [en, en_US, base]
 });
 
-describe('module:lib.errors', () => {
-    describe('class:ArgumentError', () => {
-        before(() => {
-            console.debug(
-                `Using "${fake.seed(
-                    parseOptionalEnvInteger('TESTS_FAKER_SEED') ?? undefined
-                )}" as random data seed for "module:helpers.fs" tests...`
-            );
+describe('class:lib.errors.ArgumentError', () => {
+    before(() => {
+        console.debug(
+            `Using "${fake.seed(
+                parseOptionalEnvInteger('TESTS_FAKER_SEED') ?? undefined
+            )}" as random data seed for "class:lib.errors.ArgumentError" tests...`
+        );
+    });
+    describe('.constructor()', () => {
+        it('should set the `argumentName` property to the given value', () => {
+            //-- Given
+            const argumentName = fake.database.column();
+
+            //-- When
+            const r = new ArgumentError(argumentName);
+
+            //-- Then
+            expect(r.argumentName).to.equal(argumentName);
         });
-        describe('.constructor()', () => {
-            it('should set the `argumentName` property to the given value', () => {
-                //-- Given
-                const argumentName = fake.database.column();
+        it('should pass the `message` argument to the base class', () => {
+            //-- Given
+            const argumentName = fake.database.column();
+            const message = fake.lorem.sentence();
 
-                //-- When
-                const r = new ArgumentError(argumentName);
+            //-- When
+            const r = new ArgumentError(argumentName, message);
 
-                //-- Then
-                expect(r.argumentName).to.equal(argumentName);
-            });
-            it('should pass the `message` argument to the base class', () => {
-                //-- Given
-                const argumentName = fake.database.column();
-                const message = fake.lorem.sentence();
+            //-- Then
+            expect(r.message).to.equal(message);
+        });
+        it('should pass a default string to the base class as the `message` argument if none is given', () => {
+            //-- Given
+            const argumentName = fake.database.column();
 
-                //-- When
-                const r = new ArgumentError(argumentName, message);
+            //-- When
+            const r = new ArgumentError(argumentName);
 
-                //-- Then
-                expect(r.message).to.equal(message);
-            });
-            it('should pass a default string to the base class as the `message` argument if none is given', () => {
-                //-- Given
-                const argumentName = fake.database.column();
+            //-- Then
+            expect(r.message).to.equal(`Invalid argument "${argumentName}"`);
+        });
+        it('should pass the `inner` argument to the base class', () => {
+            //-- Given
+            const argumentName = fake.database.column();
+            const inner = new Error();
 
-                //-- When
-                const r = new ArgumentError(argumentName);
+            //-- When
+            const r = new ArgumentError(argumentName, undefined, inner);
 
-                //-- Then
-                expect(r.message).to.equal(
-                    `Invalid argument "${argumentName}"`
-                );
-            });
-            it('should pass the `inner` argument to the base class', () => {
-                //-- Given
-                const argumentName = fake.database.column();
-                const inner = new Error();
+            //-- Then
+            expect(r.inner).to.equal(inner);
+        });
+        it('should pass `undefined` to the because class as the `inner` argument to if none was given', () => {
+            //-- Given
+            const argumentName = fake.database.column();
 
-                //-- When
-                const r = new ArgumentError(argumentName, undefined, inner);
+            //-- When
+            const r = new ArgumentError(argumentName);
 
-                //-- Then
-                expect(r.inner).to.equal(inner);
-            });
-            it('should pass `undefined` to the because class as the `inner` argument to if none was given', () => {
-                //-- Given
-                const argumentName = fake.database.column();
-
-                //-- When
-                const r = new ArgumentError(argumentName);
-
-                //-- Then
-                expect(r.inner).to.be.undefined;
-            });
+            //-- Then
+            expect(r.inner).to.be.undefined;
         });
     });
 });
