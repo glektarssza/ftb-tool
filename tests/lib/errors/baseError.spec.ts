@@ -7,7 +7,7 @@ import {en, en_US, base, Faker} from '@faker-js/faker';
 import {BaseError} from '@src/lib/errors/baseError';
 
 //-- Test Utils
-import {parseOptionalEnvInteger} from '../utils';
+import {parseOptionalEnvInteger} from '../../utils';
 
 /**
  * The data faker instance for these tests.
