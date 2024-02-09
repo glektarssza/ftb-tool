@@ -1,4 +1,5 @@
 export {BaseError} from './baseError';
+export {ArgumentError} from './argumentError';
 
 /**
  * A module which provides custom error implementations for the application.
