@@ -13,7 +13,7 @@ source "$SCRIPT_DIR/_/husky.sh"
 
 #-- What files are staged to be committed?
 IFS=" "
-STAGED_FILES=( $(git diff --name-only --staged | sed -ne '/\.\(ts\)/p' | xargs) )
+STAGED_FILES=( $(git diff --name-only --staged --diff-filter=d | sed -ne '/\.\(ts\)/p' | xargs) )
 unset IFS
 
 if [[ ${#STAGED_FILES[@]} == 0 ]]; then
