@@ -26,7 +26,7 @@ describe('module:lib.errors.baseError', () => {
             );
         });
         describe('.constructor()', () => {
-            it('should pass the `message` to the base class', () => {
+            it('should pass the `message` argument to the base class', () => {
                 //-- Given
                 const message = fake.lorem.sentence();
 
@@ -36,7 +36,7 @@ describe('module:lib.errors.baseError', () => {
                 //-- Then
                 expect(r.message).to.equal(message);
             });
-            it('should pass an empty string to the base class as the message if none is given', () => {
+            it('should pass an empty string to the base class as the `message` argument if none is given', () => {
                 //-- Given
 
                 //-- When
