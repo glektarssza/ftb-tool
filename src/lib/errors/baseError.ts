@@ -25,7 +25,7 @@ export class BaseError extends Error {
 }
 
 /**
- * A module which provides a base error implementations for the application.
+ * A module which provides a base error implementation for the application.
  */
 const m = {
     // TODO: Any helper functions for overriding `prepareStackTrace`

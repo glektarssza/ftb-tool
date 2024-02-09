@@ -24,7 +24,7 @@ export class ArgumentError extends BaseError {
 }
 
 /**
- * A module which provides an argument error implementations for the
+ * A module which provides an argument error implementation for the
  * application.
  */
 const m = {};

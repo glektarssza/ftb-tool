@@ -24,7 +24,7 @@ export class OperationError extends BaseError {
 }
 
 /**
- * A module which provides an operation error implementations for the
+ * A module which provides an operation error implementation for the
  * application.
  */
 const m = {};

@@ -22,7 +22,7 @@ export class ArgumentNilError extends ArgumentError {
 }
 
 /**
- * A module which provides an error implementations for the application for when
+ * A module which provides an error implementation for the application for when
  * an argument is `null` or `undefined`.
  */
 const m = {};
