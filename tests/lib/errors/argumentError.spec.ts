@@ -15,7 +15,7 @@ const fake = new Faker({
     locale: [en, en_US, base]
 });
 
-describe('module:lib.errors.argumentError', () => {
+describe('module:lib.errors', () => {
     describe('class:ArgumentError', () => {
         before(() => {
             console.debug(

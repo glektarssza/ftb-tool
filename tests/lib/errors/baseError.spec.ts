@@ -16,7 +16,7 @@ const fake = new Faker({
     locale: [en, en_US, base]
 });
 
-describe('module:lib.errors.baseError', () => {
+describe('module:lib.errors', () => {
     describe('class:BaseError', () => {
         before(() => {
             console.debug(
