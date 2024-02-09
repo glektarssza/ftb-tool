@@ -6,9 +6,12 @@
         "text"
     ],
     "include": [
-        "**/src/helpers/**"
+        "**/src/helpers/**",
+        "**/src/lib/**"
     ],
     "exclude": [
+        "**/src/helpers/**/index.ts",
+        "**/src/lib/**/index.ts",
         "**/tests",
         "**/coverage",
         "**/*.js",
