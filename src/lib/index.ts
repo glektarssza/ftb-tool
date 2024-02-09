@@ -2,6 +2,7 @@ export {Disposable} from './disposable';
 export {
     ArgumentError,
     ArgumentNilError,
+    ArgumentRangeError,
     BaseError,
     DisposedError,
     OperationError,
