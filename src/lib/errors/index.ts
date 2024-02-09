@@ -1,6 +1,7 @@
 export {BaseError} from './baseError';
 export {ArgumentError} from './argumentError';
 export {ArgumentNilError} from './argumentNilError';
+export {OperationError} from './operationError';
 
 /**
  * A module which provides custom error implementations for the application.
