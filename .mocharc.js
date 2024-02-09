@@ -19,5 +19,6 @@ module.exports = {
     extension: ['ts'],
     recursive: true,
     spec: './tests/**/*.spec.ts',
-    'node-option': ['import=tsx']
+    'node-option': ['import=tsx'],
+    require: ['source-map-support/register']
 };
