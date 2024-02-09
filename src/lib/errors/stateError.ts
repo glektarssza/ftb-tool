@@ -9,7 +9,7 @@ export class StateError extends OperationError {
     /**
      * The type of object that was in an invalid state.
      */
-    public objectType: string;
+    public readonly objectType: string;
 
     /**
      * Create a new instance.
