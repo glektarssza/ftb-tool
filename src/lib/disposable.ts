@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 /**
  * An interface for objects that manage some kind of resource and must release
  * them before being considered for garbage collection.
