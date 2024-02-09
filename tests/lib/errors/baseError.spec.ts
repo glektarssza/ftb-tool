@@ -54,9 +54,6 @@ describe('class:lib.errors.BaseError', () => {
             //-- Then
             expect(r.name).to.equal(TestClass.name);
         });
-        it(
-            'should set the `name` property to `Error` if no name is available on the constructor'
-        );
         it('should set the `inner` property to the given value', () => {
             //-- Given
             const inner = new Error();
