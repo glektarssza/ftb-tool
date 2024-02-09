@@ -37,7 +37,7 @@ export class ArgumentChoicesError<T> extends ArgumentError {
             argumentName,
             message ??
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                `Invalid argument "${argumentName}" (value "${actualValue}" is not one of "[${argumentChoices.join(
+                `Invalid argument "${argumentName}" (value "${actualValue}" not one of "[${argumentChoices.join(
                     ', '
                 )}]")`,
             inner
