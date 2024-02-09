@@ -56,8 +56,8 @@ export class ArgumentRangeError<T> extends ArgumentError {
 }
 
 /**
- * A module which provides an argument error implementation for the
- * application.
+ * A module which provides an error implementation for the application for when
+ * an argument is outside of the allowed range.
  */
 const m = {};
 
