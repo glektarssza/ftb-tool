@@ -61,7 +61,7 @@
         "rebuild:types": "npm run clean:types && npm run build:types"
     },
     "dependencies": {
-        "archiver": "^6.0.1",
+        "archiver": "^7.0.0",
         "axios": "^1.6.7",
         "lodash": "^4.17.21",
         "uuid": "^9.0.1",
