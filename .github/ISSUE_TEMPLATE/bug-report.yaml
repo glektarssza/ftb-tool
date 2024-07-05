@@ -1,7 +1,8 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-issue-forms.json
 name: Bug Report
 description: Report that something is not working as expected.
 labels:
-  - bug
+  - Bug
 body:
   - id: operating-system
     type: dropdown
@@ -13,10 +14,10 @@ body:
         - macOS
     validations:
       required: true
-  - id: app-version
+  - id: version
     type: input
     attributes:
-      label: App Version
+      label: Version
       placeholder: vX.Y.Z
     validations:
       required: true
@@ -60,5 +61,3 @@ body:
       options:
         - label: I have searched for similar issues and found none.
           required: true
-    validations:
-      required: true
