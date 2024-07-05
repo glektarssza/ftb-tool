@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-issue-forms.json
+name: Feature Request
+description: Request a new feature or functionality.
+labels:
+  - Feature Request
+body:
+  - id: description
+    type: textarea
+    attributes:
+      label: Description
+      description: A description of what feature or functionality you would like to have added.
+    validations:
+      required: true
+  - id: acknowledgements
+    type: checkboxes
+    attributes:
+      label: "I acknowledge that:"
+      options:
+        - label: I have searched for similar issues and found none.
+          required: true
