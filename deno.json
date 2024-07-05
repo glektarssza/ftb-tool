@@ -1,0 +1,51 @@
+{
+    "$schema": "https://raw.githubusercontent.com/denoland/deno/main/cli/schemas/config-file.v1.json",
+    "bench": {
+        "include": [
+            "./bench/*.spec.ts",
+            "./bench/**/*.spec.ts"
+        ]
+    },
+    "compilerOptions": {},
+    "fmt": {
+        "include": [
+            "./bench/*.spec.ts",
+            "./bench/**/*.spec.ts",
+            "./src/*.ts",
+            "./src/**/*.ts",
+            "./tests/*.spec.ts",
+            "./tests/**/*.spec.ts"
+        ],
+        "indentWidth": 4,
+        "lineWidth": 80,
+        "proseWrap": "always",
+        "semiColons": true,
+        "singleQuote": true,
+        "useTabs": false
+    },
+    "lint": {
+        "include": [
+            "./bench/*.spec.ts",
+            "./bench/**/*.spec.ts",
+            "./src/*.ts",
+            "./src/**/*.ts",
+            "./tests/*.spec.ts",
+            "./tests/**/*.spec.ts"
+        ],
+        "report": "pretty",
+        "rules": {
+            "tags": []
+        }
+    },
+    "lock": true,
+    "nodeModulesDir": true,
+    "tasks": {},
+    "test": {
+        "include": [
+            "./tests/*.spec.ts",
+            "./tests/**/*.spec.ts"
+        ]
+    },
+    "unstable": [],
+    "vendor": true
+}
