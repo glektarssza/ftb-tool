@@ -1,9 +1,9 @@
 {
     "recommendations": [
-        "dbaeumer.vscode-eslint",
-        "rvest.vs-code-prettier-eslint",
-        "github.vscode-pull-request-github",
         "github.remotehub",
-        "github.vscode-github-actions"
+        "github.vscode-pull-request-github",
+        "github.vscode-github-actions",
+        "editorconfig.editorconfig",
+        "denoland.vscode-deno"
     ]
 }

@@ -1,13 +1,11 @@
 version: 2
 updates:
-  - package-ecosystem: npm
+  - package-ecosystem: github-actions
     directory: /
-    allow:
-      - dependency-type: production
     labels:
-      - dependency
+     - Dependency
     schedule:
       interval: weekly
       day: wednesday
       time: "12:00"
-      timezone: "Canada/Mountain"
+      timezone: Canada/Mountain
