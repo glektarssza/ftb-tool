@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    labels:
+     - Dependency
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "12:00"
+      timezone: Canada/Mountain
