@@ -1,0 +1,60 @@
+name: Build
+on:
+  workflow_call:
+    secrets:
+      github-token:
+        required: true
+        description: |
+          The API token to use for making authenticated GitHub API calls.
+    inputs:
+      build-os:
+        type: string
+        description: |
+          The operating system to build for.
+
+          Valid values are:
+           * `windows-latest`
+           * `ubuntu-latest`
+           * `macos-latest`
+        required: true
+    outputs:
+      artifact-id:
+        description: |
+          The ID of the artifact produced by this workflow.
+        value: ${{jobs.build.outputs.artifact-id}}
+      artifact-name:
+        description: |
+          The name of the artifact produced by this workflow.
+        value: ${{jobs.build.outputs.artifact-name}}
+jobs:
+  build:
+    name: Build
+    runs-on: ${{inputs.build-os}}
+    permissions:
+      contents: read
+    outputs:
+      artifact-id: ${{steps.upload-artifacts.outputs.artifact-id}}
+      artifact-name: dist-${{(startsWith(inputs.build-os, 'windows') && 'windows') || (startsWith(inputs.build-os, 'ubuntu') && 'linux') || (startsWith(inputs.build-os, 'macos') && 'macos') || 'unknown'}}
+    steps:
+      - id: checkout-repository
+        name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{github.repository}}
+          token: ${{secrets.github-token || secrets.GITHUB_TOKEN}}
+      - id: setup-deno
+        name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - id: compile
+        name: Compile
+        run: deno compile -A -o dist/ftb-tool ./src/main.ts
+      - id: upload-artifacts
+        name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{(startsWith(inputs.build-os, 'windows') && 'windows') || (startsWith(inputs.build-os, 'ubuntu') && 'linux') || (startsWith(inputs.build-os, 'macos') && 'macos') || 'unknown'}}
+          path: dist
+          compression-level: 0
+          if-no-files-found: error
