@@ -2,6 +2,8 @@
     "recommendations": [
         "github.remotehub",
         "github.vscode-pull-request-github",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "editorconfig.editorconfig",
+        "denoland.vscode-deno"
     ]
 }
