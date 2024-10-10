@@ -34,21 +34,5 @@ tags
 # Logs #
 *.log*
 
-# Packages ##
-## NodeJS ##
-node_modules/
-
-# Artifacts #
-## Transpiled Source ##
-/lib/
-/types/
-
-## Standalone Binaries ##
-dist/
-
-# ESLint Cache #
-.eslintcache
-
-## nyc Output ##
-.nyc_output/
-coverage/
+# Environment #
+.envrc
